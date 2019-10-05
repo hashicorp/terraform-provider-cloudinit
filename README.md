@@ -1,11 +1,13 @@
-Terraform Provider Scaffolding
+Terraform Cloud-init Provider
 ==================
 
-- Website: https://www.terraform.io
-- [![Gitter chat](https://badges.gitter.im/hashicorp-terraform/Lobby.png)](https://gitter.im/hashicorp-terraform/Lobby)
-- Mailing list: [Google Groups](http://groups.google.com/group/terraform-tool)
+[Terraform](https://www.terraform.io) provider for rendering [cloud-init](https://cloudinit.readthedocs.io) configurations.
 
-![Terraform](https://rawgithub.com/hashicorp/terraform/master/website/source/assets/images/logo-hashicorp.svg)
+<img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">
+
+This provider is intended to replace the [template provider](https://www.terraform.io/docs/providers/template/). General templating can now be achieved through [the `templatefile` function](https://www.terraform.io/docs/configuration/functions/templatefile.html), without creating a separate data resource. 
+
+The cloud-init Terraform provider contains the `cloudinit_config` data source, previously available as the [`template_cloudinit_config` resource in the template provider](https://www.terraform.io/docs/providers/template/d/cloudinit_config.html).
 
 Requirements
 ------------
@@ -13,26 +15,31 @@ Requirements
 -	[Terraform](https://www.terraform.io/downloads.html) 0.10.x
 -	[Go](https://golang.org/doc/install) 1.8 (to build the provider plugin)
 
-Building The Provider
----------------------
-
-Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-scaffolding`
-
-```sh
-$ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
-$ git clone git@github.com:terraform-providers/terraform-provider-scaffolding
-```
-
-Enter the provider directory and build the provider
-
-```sh
-$ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-scaffolding
-$ make build
-```
 
 Using the provider
 ----------------------
-## Fill in for each provider
+
+The `cloudinit_config` data source renders cloud-init config given in HCL form to the MIME-multipart form required by cloud-init.
+
+
+Example configuration:
+```
+data "cloudinit_config" "foo" {
+  gzip = false
+  base64_encode = false
+
+  part {
+    content_type = "text/x-shellscript"
+    content = "baz"
+  }
+}
+```
+
+This renders to:
+
+```
+Content-Type: multipart/mixed; boundary=\"MIMEBOUNDARY\"\nMIME-Version: 1.0\r\n\r\n--MIMEBOUNDARY\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/x-shellscript\r\nMime-Version: 1.0\r\n\r\nbaz\r\n--MIMEBOUNDARY--\r\n
+```
 
 Developing the Provider
 ---------------------------
@@ -44,7 +51,7 @@ To compile the provider, run `make build`. This will build the provider and put 
 ```sh
 $ make bin
 ...
-$ $GOPATH/bin/terraform-provider-scaffolding
+$ $GOPATH/bin/terraform-provider-cloudinit
 ...
 ```
 
