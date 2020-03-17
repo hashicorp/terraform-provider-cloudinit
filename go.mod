@@ -1,4 +1,4 @@
-module github.com/kmoe/terraform-provider-cloudinit
+module github.com/hashicorp/terraform-provider-cloudinit
 
 go 1.12
 
