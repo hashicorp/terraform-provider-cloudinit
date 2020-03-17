@@ -7,7 +7,7 @@ Terraform Cloud-init Provider
 
 This provider is intended to replace the [template provider](https://www.terraform.io/docs/providers/template/). General templating can now be achieved through [the `templatefile` function](https://www.terraform.io/docs/configuration/functions/templatefile.html), without creating a separate data resource. 
 
-The cloud-init Terraform provider contains the `cloudinit_config` data source, previously available as the [`template_cloudinit_config` resource in the template provider](https://www.terraform.io/docs/providers/template/d/cloudinit_config.html).
+The cloud-init Terraform provider exposes the `cloudinit_config` data source, previously available as the [`template_cloudinit_config` resource in the template provider](https://www.terraform.io/docs/providers/template/d/cloudinit_config.html).
 
 Requirements
 ------------
