@@ -6,11 +6,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/textproto"
 	"strconv"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-cloudinit/internal/hashcode"
 )
 
@@ -68,7 +69,10 @@ func dataSourceCloudinitConfigRead(d *schema.ResourceData, meta interface{}) err
 		return err
 	}
 
-	d.Set("rendered", rendered)
+	err = d.Set("rendered", rendered)
+	if err != nil {
+		return err
+	}
 	d.SetId(strconv.Itoa(hashcode.String(rendered)))
 	return nil
 }
@@ -115,7 +119,10 @@ func renderCloudinitConfig(d *schema.ResourceData) (string, error) {
 	if gzipOutput {
 		gzipWriter := gzip.NewWriter(&buffer)
 		err = renderPartsToWriter(cloudInitParts, gzipWriter)
-		gzipWriter.Close()
+		err = gzipWriter.Close()
+		if err != nil {
+			return "", err
+		}
 	} else {
 		err = renderPartsToWriter(cloudInitParts, &buffer)
 	}
@@ -135,7 +142,12 @@ func renderCloudinitConfig(d *schema.ResourceData) (string, error) {
 
 func renderPartsToWriter(parts cloudInitParts, writer io.Writer) error {
 	mimeWriter := multipart.NewWriter(writer)
-	defer mimeWriter.Close()
+	defer func() {
+		err := mimeWriter.Close()
+		if err != nil {
+			log.Printf("[WARN] Error closing mimewriter: %s", err)
+		}
+	}()
 
 	// we need to set the boundary explictly, otherwise the boundary is random
 	// and this causes terraform to complain about the resource being different

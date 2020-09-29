@@ -4,11 +4,11 @@ import (
 	"regexp"
 	"testing"
 
-	r "github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	r "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var testProviders = map[string]terraform.ResourceProvider{
+var testProviders = map[string]*schema.Provider{
 	"cloudinit": Provider(),
 }
 
