@@ -7,5 +7,5 @@ import (
 
 func main() {
 	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: cloudinit.Provider})
+		ProviderFunc: provider.New})
 }

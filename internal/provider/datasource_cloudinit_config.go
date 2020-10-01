@@ -1,4 +1,4 @@
-package cloudinit
+package provider
 
 import (
 	"bytes"
