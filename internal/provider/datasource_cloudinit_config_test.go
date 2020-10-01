@@ -1,4 +1,4 @@
-package cloudinit
+package provider
 
 import (
 	"regexp"
@@ -9,7 +9,7 @@ import (
 )
 
 var testProviders = map[string]*schema.Provider{
-	"cloudinit": Provider(),
+	"cloudinit": New(),
 }
 
 func TestRender(t *testing.T) {
