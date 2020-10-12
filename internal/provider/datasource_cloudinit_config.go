@@ -149,6 +149,18 @@ func renderPartsToWriter(parts cloudInitParts, writer io.Writer) error {
 		}
 	}()
 
+	// we first write parts with content-type test/custom-header
+	// they have to be always in first position in the file rendered
+	for _, part := range parts {
+		if part.ContentType == "text/custom-header" {
+			writer.Write([]byte(part.Content))
+			// If no '\n' at the end of the content, we add one
+			if part.Content[len(part.Content)-1] != '\n' {
+				writer.Write([]byte("\n"))
+			}
+		}
+	}
+
 	// we need to set the boundary explictly, otherwise the boundary is random
 	// and this causes terraform to complain about the resource being different
 	if err := mimeWriter.SetBoundary("MIMEBOUNDARY"); err != nil {
@@ -159,33 +171,38 @@ func renderPartsToWriter(parts cloudInitParts, writer io.Writer) error {
 	writer.Write([]byte("MIME-Version: 1.0\r\n\r\n"))
 
 	for _, part := range parts {
-		header := textproto.MIMEHeader{}
-		if part.ContentType == "" {
-			header.Set("Content-Type", "text/plain")
-		} else {
-			header.Set("Content-Type", part.ContentType)
+		// we discard custom-header since it's already processed
+		if part.ContentType != "text/custom-header" {
+			header := textproto.MIMEHeader{}
+
+			if part.ContentType == "" {
+				header.Set("Content-Type", "text/plain")
+			} else {
+				header.Set("Content-Type", part.ContentType)
+			}
+
+			header.Set("MIME-Version", "1.0")
+			header.Set("Content-Transfer-Encoding", "7bit")
+
+			if part.Filename != "" {
+				header.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, part.Filename))
+			}
+
+			if part.MergeType != "" {
+				header.Set("X-Merge-Type", part.MergeType)
+			}
+
+			partWriter, err := mimeWriter.CreatePart(header)
+			if err != nil {
+				return err
+			}
+
+			_, err = partWriter.Write([]byte(part.Content))
+			if err != nil {
+				return err
+			}
 		}
 
-		header.Set("MIME-Version", "1.0")
-		header.Set("Content-Transfer-Encoding", "7bit")
-
-		if part.Filename != "" {
-			header.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, part.Filename))
-		}
-
-		if part.MergeType != "" {
-			header.Set("X-Merge-Type", part.MergeType)
-		}
-
-		partWriter, err := mimeWriter.CreatePart(header)
-		if err != nil {
-			return err
-		}
-
-		_, err = partWriter.Write([]byte(part.Content))
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
