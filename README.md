@@ -41,6 +41,29 @@ This renders to:
 Content-Type: multipart/mixed; boundary=\"MIMEBOUNDARY\"\nMIME-Version: 1.0\r\n\r\n--MIMEBOUNDARY\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/x-shellscript\r\nMime-Version: 1.0\r\n\r\nbaz\r\n--MIMEBOUNDARY--\r\n
 ```
 
+Another example configuration:
+```
+data "cloudinit_config" "foo" {
+  gzip = false
+  base64_encode = false
+
+  part {
+    content_type = "text/x-shellscript"
+    content = "baz"
+  }
+  part {
+    content_type = "text/custom-header"
+    content = "baz=10"
+  }
+}
+```
+
+This renders to:
+
+```
+baz=10\nContent-Type: multipart/mixed; boundary=\"MIMEBOUNDARY\"\nMIME-Version: 1.0\r\n\r\n--MIMEBOUNDARY\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/x-shellscript\r\nMime-Version: 1.0\r\n\r\nbaz\r\n--MIMEBOUNDARY--\r\n
+```
+
 Developing the Provider
 ---------------------------
 
