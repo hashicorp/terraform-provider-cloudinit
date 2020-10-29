@@ -45,6 +45,8 @@ The following arguments are supported:
 * `base64_encode` - (Optional) Base64 encoding of the rendered output. Defaults to `true`,
   and cannot be disabled if `gzip` is `true`.
 
+* `boundary` - (Optional) Define the Writer's default boundary separator. Defaults to `MIMEBOUNDARY`.
+
 * `part` - (Required) A nested block type which adds a file to the generated
   cloud-init configuration. Use multiple `part` blocks to specify multiple
   files, which will be included in order of declaration in the final MIME
