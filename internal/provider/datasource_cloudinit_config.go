@@ -54,6 +54,11 @@ func dataSourceCloudinitConfig() *schema.Resource {
 				Optional: true,
 				Default:  true,
 			},
+			"boundary": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "MIMEBOUNDARY",
+			},
 			"rendered": {
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -80,6 +85,7 @@ func dataSourceCloudinitConfigRead(d *schema.ResourceData, meta interface{}) err
 func renderCloudinitConfig(d *schema.ResourceData) (string, error) {
 	gzipOutput := d.Get("gzip").(bool)
 	base64Output := d.Get("base64_encode").(bool)
+	mimeBoundary := d.Get("boundary").(string)
 
 	if gzipOutput && !base64Output {
 		return "", fmt.Errorf("base64_encode is mandatory when gzip is enabled")
@@ -118,13 +124,13 @@ func renderCloudinitConfig(d *schema.ResourceData) (string, error) {
 	var err error
 	if gzipOutput {
 		gzipWriter := gzip.NewWriter(&buffer)
-		err = renderPartsToWriter(cloudInitParts, gzipWriter)
+		err = renderPartsToWriter(mimeBoundary, cloudInitParts, gzipWriter)
 		err = gzipWriter.Close()
 		if err != nil {
 			return "", err
 		}
 	} else {
-		err = renderPartsToWriter(cloudInitParts, &buffer)
+		err = renderPartsToWriter(mimeBoundary, cloudInitParts, &buffer)
 	}
 	if err != nil {
 		return "", err
@@ -140,7 +146,7 @@ func renderCloudinitConfig(d *schema.ResourceData) (string, error) {
 	return output, nil
 }
 
-func renderPartsToWriter(parts cloudInitParts, writer io.Writer) error {
+func renderPartsToWriter(mimeBoundary string, parts cloudInitParts, writer io.Writer) error {
 	mimeWriter := multipart.NewWriter(writer)
 	defer func() {
 		err := mimeWriter.Close()
@@ -151,7 +157,7 @@ func renderPartsToWriter(parts cloudInitParts, writer io.Writer) error {
 
 	// we need to set the boundary explictly, otherwise the boundary is random
 	// and this causes terraform to complain about the resource being different
-	if err := mimeWriter.SetBoundary("MIMEBOUNDARY"); err != nil {
+	if err := mimeWriter.SetBoundary(mimeBoundary); err != nil {
 		return err
 	}
 
