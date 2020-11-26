@@ -1,3 +1,9 @@
+## 2.1.0 (Unreleased)
+
+NEW FEATURES:
+
+* MIMEBOUNDARY can now be customised with `boundary` [GH-7].
+
 ## 2.0.0 (October 12, 2020)
 
 Binary releases of this provider will now include the linux-arm64 platform.
