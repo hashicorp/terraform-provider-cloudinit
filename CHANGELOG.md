@@ -1,8 +1,8 @@
-## 2.1.0 (Unreleased)
+## 2.1.0 (November 26, 2020)
 
 NEW FEATURES:
 
-* MIMEBOUNDARY can now be customised with `boundary` [GH-7].
+* MIMEBOUNDARY can now be customised with `boundary` [[#7](https://github.com/terraform-providers/terraform-provider-scaffolding/issues/7)].
 
 ## 2.0.0 (October 12, 2020)
 
