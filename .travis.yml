@@ -8,7 +8,7 @@ go:
 - tip
 
 env:
-  - GOFLAGS=-mod=vendor
+  - GOFLAGS=-mod=vendor TF_ACC_TERRAFORM_VERSION=0.15.0-alpha20210107
 
 script:
 - make test
