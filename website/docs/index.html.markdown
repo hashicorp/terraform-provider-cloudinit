@@ -1,7 +1,6 @@
 ---
 layout: "cloudinit"
 page_title: "Provider: cloud-init"
-sidebar_current: "docs-cloudinit-index"
 description: |-
   The cloud-init provider is used to template strings for other Terraform resources.
 ---

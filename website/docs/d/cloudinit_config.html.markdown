@@ -1,7 +1,6 @@
 ---
 layout: "cloudinit"
 page_title: "Cloud-init: cloudinit_config"
-sidebar_current: "docs-cloudinit-datasource-cloudinit-config"
 description: |-
   Renders a multi-part cloud-init config from source files.
 ---
