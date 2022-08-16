@@ -1,9 +1,3 @@
-## 2.3.0 (unreleased)
-
-NOTES:
-
-* This Go module has been updated to Go 1.18 per the Go support policy. Any consumers building on earlier Go versions may experience errors. ([#72](https://github.com/hashicorp/terraform-provider-cloudinit/issues/72))
-
 ## 2.2.0 (February 19, 2021)
 
 Binary releases of this provider will now include the darwin-arm64 platform. This version contains no further changes.
