@@ -32,6 +32,18 @@ func TestRender(t *testing.T) {
 			"Content-Type: multipart/mixed; boundary=\"MIMEBOUNDARY\"\nMIME-Version: 1.0\r\n\r\n--MIMEBOUNDARY\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/x-shellscript\r\nMime-Version: 1.0\r\n\r\nbaz\r\n--MIMEBOUNDARY--\r\n",
 		},
 		{
+			"no gzip or b64 - basic content - default to text plain",
+			`data "cloudinit_config" "foo" {
+				gzip = false
+				base64_encode = false
+
+				part {
+					content = "baz"
+				}
+			}`,
+			"Content-Type: multipart/mixed; boundary=\"MIMEBOUNDARY\"\nMIME-Version: 1.0\r\n\r\n--MIMEBOUNDARY\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/plain\r\nMime-Version: 1.0\r\n\r\nbaz\r\n--MIMEBOUNDARY--\r\n",
+		},
+		{
 			"no gzip or b64 - content with filename",
 			`data "cloudinit_config" "foo" {
 				gzip = false
@@ -142,23 +154,57 @@ func TestRender(t *testing.T) {
 	}
 }
 
-// https://github.com/hashicorp/terraform/issues/13572 - Correctly handle panic on a misconfigured cloudinit part.
-func TestRender_handlePanic(t *testing.T) {
-	r.UnitTest(t, r.TestCase{
-		Providers: testProviders,
-		Steps: []r.TestStep{
-			{
-				Config:      testCloudInitConfig_misconfiguredParts,
-				ExpectError: regexp.MustCompile("Unable to parse parts in cloudinit resource declaration"),
-			},
+func TestRender_handleErrors(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		ResourceBlock string
+		ErrorMatch    *regexp.Regexp
+	}{
+		{
+			"empty content field in part block",
+			`data "cloudinit_config" "foo" {
+				part {
+				  content = ""
+				}
+			}`,
+			regexp.MustCompile("Unable to parse parts in cloudinit resource declaration"),
 		},
-	})
-}
+		{
+			"base64 can't be false when gzip is true",
+			`data "cloudinit_config" "foo" {
+				gzip = true
+				base64_encode = false
 
-var testCloudInitConfig_misconfiguredParts = `
-data "cloudinit_config" "foo" {
-  part {
-    content = ""
-  }
+				part {
+				  content = "abc"
+				}
+			}`,
+			regexp.MustCompile("base64_encode is mandatory when gzip is enabled"),
+		},
+		{
+			"at least one part is required",
+			`data "cloudinit_config" "foo" {
+				gzip = false
+				base64_encode = false
+			}`,
+			// TODO: I think this test should be removed? Not sure if testing schema validation is best practice
+			regexp.MustCompile("Insufficient part blocks"),
+			// TODO: This code can't even be hit, should move to schema validation
+			// regexp.MustCompile("No parts found in the cloudinit resource declaration"),
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.Name, func(t *testing.T) {
+			r.UnitTest(t, r.TestCase{
+				Providers: testProviders,
+				Steps: []r.TestStep{
+					{
+						Config:      tt.ResourceBlock,
+						ExpectError: tt.ErrorMatch,
+					},
+				},
+			})
+		})
+	}
 }
-`
