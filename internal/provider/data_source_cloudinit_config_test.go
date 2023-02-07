@@ -4,13 +4,8 @@ import (
 	"regexp"
 	"testing"
 
-	r "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	r "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
-
-var testProviders = map[string]*schema.Provider{
-	"cloudinit": New(),
-}
 
 func TestRender(t *testing.T) {
 	testCases := []struct {
@@ -140,7 +135,7 @@ func TestRender(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.Name, func(t *testing.T) {
 			r.UnitTest(t, r.TestCase{
-				Providers: testProviders,
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
 				Steps: []r.TestStep{
 					{
 						Config: tt.ResourceBlock,
@@ -154,6 +149,8 @@ func TestRender(t *testing.T) {
 	}
 }
 
+// TODO: this test was in initial provider, maybe not needed?
+// https://github.com/hashicorp/terraform/issues/13572
 func TestRender_handleErrors(t *testing.T) {
 	testCases := []struct {
 		Name          string
@@ -164,10 +161,10 @@ func TestRender_handleErrors(t *testing.T) {
 			"empty content field in part block",
 			`data "cloudinit_config" "foo" {
 				part {
-				  content = ""
+					content = ""
 				}
 			}`,
-			regexp.MustCompile("Unable to parse parts in cloudinit resource declaration"),
+			regexp.MustCompile("content string length must be at least 1"),
 		},
 		{
 			"base64 can't be false when gzip is true",
@@ -179,7 +176,7 @@ func TestRender_handleErrors(t *testing.T) {
 				  content = "abc"
 				}
 			}`,
-			regexp.MustCompile("base64_encode is mandatory when gzip is enabled"),
+			regexp.MustCompile("Expected base64_encode to be set to true when gzip is true"),
 		},
 		{
 			"at least one part is required",
@@ -187,17 +184,14 @@ func TestRender_handleErrors(t *testing.T) {
 				gzip = false
 				base64_encode = false
 			}`,
-			// TODO: I think this test should be removed? Not sure if testing schema validation is best practice
-			regexp.MustCompile("Insufficient part blocks"),
-			// TODO: This code can't even be hit, should move to schema validation
-			// regexp.MustCompile("No parts found in the cloudinit resource declaration"),
+			regexp.MustCompile("part must have a configuration value"),
 		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.Name, func(t *testing.T) {
 			r.UnitTest(t, r.TestCase{
-				Providers: testProviders,
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
 				Steps: []r.TestStep{
 					{
 						Config:      tt.ResourceBlock,
