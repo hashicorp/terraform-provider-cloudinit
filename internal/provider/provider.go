@@ -23,9 +23,13 @@ func (p *cloudinitProvider) Metadata(ctx context.Context, req provider.MetadataR
 	resp.TypeName = "cloudinit"
 }
 
-// TODO: Add descriptions and docs
 func (p *cloudinitProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
-	resp.Schema = schema.Schema{}
+	resp.Schema = schema.Schema{
+		MarkdownDescription: "The cloud-init Terraform provider exposes the `cloudinit_config` data source, previously available as the " +
+			"`template_cloudinit_config` resource [in the template provider](https://registry.terraform.io/providers/hashicorp/template/latest/docs/data-sources/cloudinit_config), " +
+			"which renders a [multipart MIME configuration](https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive) " +
+			"for use with [cloud-init](https://cloudinit.readthedocs.io/en/latest/).",
+	}
 }
 
 func (p *cloudinitProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {

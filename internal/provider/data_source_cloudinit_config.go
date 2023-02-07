@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/textproto"
 	"strconv"
@@ -19,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-provider-cloudinit/internal/hashcode"
 )
 
@@ -28,7 +28,6 @@ var (
 
 type configDataSource struct{}
 
-// TODO: better names.
 type configDataSourceModel struct {
 	ID           types.String      `tfsdk:"id"`
 	Parts        []configPartModel `tfsdk:"part"`
@@ -64,7 +63,6 @@ func (*configDataSource) ValidateConfig(ctx context.Context, req datasource.Vali
 
 	if config.Gzip.ValueBool() && !config.Base64Encode.ValueBool() {
 		resp.Diagnostics.AddAttributeError(
-			// TODO: is this path correct?
 			path.Root("base64_encode"),
 			"Invalid Attribute Configuration",
 			"Expected base64_encode to be set to true when gzip is true.",
@@ -72,7 +70,6 @@ func (*configDataSource) ValidateConfig(ctx context.Context, req datasource.Vali
 	}
 }
 
-// TODO: Add descriptions and docs.
 func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Blocks: map[string]schema.Block{
@@ -84,76 +81,92 @@ func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"content_type": schema.StringAttribute{
-							Optional: true,
 							Validators: []validator.String{
 								stringvalidator.LengthAtLeast(1),
 							},
+							Optional:            true,
+							MarkdownDescription: "A MIME-style content type to report in the header for the part. Defaults to `text/plain`",
 						},
 						"content": schema.StringAttribute{
-							Required: true,
 							Validators: []validator.String{
 								stringvalidator.LengthAtLeast(1),
 							},
+							Required:            true,
+							MarkdownDescription: "Body content for the part.",
 						},
 						"filename": schema.StringAttribute{
-							Optional: true,
+							Optional:            true,
+							MarkdownDescription: "A filename to report in the header for the part.",
 						},
 						"merge_type": schema.StringAttribute{
 							Optional: true,
+							MarkdownDescription: "A value for the `X-Merge-Type` header of the part, to control " +
+								"[cloud-init merging behavior](https://cloudinit.readthedocs.io/en/latest/reference/merging.html).",
 						},
 					},
 				},
+				// TODO: add note about this being required? what will show up?
+				MarkdownDescription: "A nested block type which adds a file to the generated cloud-init configuration. Use multiple " +
+					"`part` blocks to specify multiple files, which will be included in order of declaration in the final MIME document.",
 			},
 		},
 		Attributes: map[string]schema.Attribute{
 			"gzip": schema.BoolAttribute{
-				Optional: true,
+				Optional:            true,
+				MarkdownDescription: "Specify whether or not to gzip the `rendered` output. Defaults to `true`.",
 			},
 			"base64_encode": schema.BoolAttribute{
-				Optional: true,
+				Optional:            true,
+				MarkdownDescription: "Specify whether or not to base64 encode the `rendered` output. Defaults to `true`, and cannot be disabled if gzip is `true`.",
 			},
 			"boundary": schema.StringAttribute{
-				Optional: true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
+				Optional:            true,
+				MarkdownDescription: "Specify the Writer's default boundary separator. Defaults to `MIMEBOUNDARY`.",
 			},
 			"rendered": schema.StringAttribute{
-				Computed:    true,
-				Description: "rendered cloudinit configuration",
+				Computed:            true,
+				MarkdownDescription: "The final rendered multi-part cloud-init config.",
 			},
 			"id": schema.StringAttribute{
-				Computed: true,
+				Computed:            true,
+				MarkdownDescription: "[CRC-32](https://pkg.go.dev/hash/crc32) checksum of `rendered` cloud-init config.",
 			},
 		},
+		MarkdownDescription: "Renders a [multi-part MIME configuration](https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive) " +
+			"for use with [cloud-init](https://cloudinit.readthedocs.io/en/latest/).\n\n" +
+			"Cloud-init is a commonly-used startup configuration utility for cloud compute instances. It accepts configuration via provider-specific " +
+			"user data mechanisms, such as `user_data` for Amazon EC2 instances. Multi-part MIME is one of the data formats it accepts. For more information, " +
+			"see [User-Data Formats](https://cloudinit.readthedocs.io/en/latest/explanation/format.html) in the cloud-init manual.\n\n" +
+			"This is not a generalized utility for producing multi-part MIME messages. It's feature set is specialized for cloud-init multi-part MIME messages.",
 	}
 }
 
 func (d *configDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config configDataSourceModel
+	var newState configDataSourceModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &newState)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	setDefaultValues(&config)
+	setDefaultValues(&newState)
 
-	renderedConfig, err := renderCloudinitConfig(&config)
+	renderedConfig, err := renderCloudinitConfig(ctx, &newState)
 	if err != nil {
-		// TODO: add detail here
-		resp.Diagnostics.AddError("error:", err.Error())
+		resp.Diagnostics.AddError("Unable to render cloudinit config", err.Error())
+		return
 	}
 
-	// TODO: should i map old struct to a new struct here?
-	config.ID = types.StringValue(strconv.Itoa(hashcode.String(renderedConfig)))
-	config.Rendered = types.StringValue(renderedConfig)
+	newState.ID = types.StringValue(strconv.Itoa(hashcode.String(renderedConfig)))
+	newState.Rendered = types.StringValue(renderedConfig)
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, config)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
 }
 
-// NOTE: Currently it's not possible to specify default values
-// against attributes of data sources in the schema.
+// NOTE: Currently it's not possible to specify default values against attributes of data sources in the schema.
 func setDefaultValues(d *configDataSourceModel) {
 	if d.Gzip.IsNull() {
 		d.Gzip = types.BoolValue(true)
@@ -172,24 +185,21 @@ func setDefaultValues(d *configDataSourceModel) {
 	}
 }
 
-// TODO: refactor
-func renderCloudinitConfig(d *configDataSourceModel) (string, error) {
+func renderCloudinitConfig(ctx context.Context, d *configDataSourceModel) (string, error) {
 	var buffer bytes.Buffer
-
 	var err error
 
 	if d.Gzip.ValueBool() {
 		gzipWriter := gzip.NewWriter(&buffer)
-		err = renderPartsToWriter(d.Boundary.ValueString(), d.Parts, gzipWriter)
-		err = gzipWriter.Close()
-		if err != nil {
-			return "", err
-		}
+		err = renderPartsToWriter(ctx, d.Boundary.ValueString(), d.Parts, gzipWriter)
+
+		gzipWriter.Close()
 	} else {
-		err = renderPartsToWriter(d.Boundary.ValueString(), d.Parts, &buffer)
+		err = renderPartsToWriter(ctx, d.Boundary.ValueString(), d.Parts, &buffer)
 	}
+
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error writing part block to MIME multi-part file: %w", err)
 	}
 
 	output := ""
@@ -202,14 +212,12 @@ func renderCloudinitConfig(d *configDataSourceModel) (string, error) {
 	return output, nil
 }
 
-// TODO: refactor.
-func renderPartsToWriter(mimeBoundary string, parts []configPartModel, writer io.Writer) error {
+func renderPartsToWriter(ctx context.Context, mimeBoundary string, parts []configPartModel, writer io.Writer) error {
 	mimeWriter := multipart.NewWriter(writer)
 	defer func() {
 		err := mimeWriter.Close()
 		if err != nil {
-			// TODO: switch to diag
-			log.Printf("[WARN] Error closing mimewriter: %s", err)
+			tflog.Warn(ctx, fmt.Sprintf("error closing mimeWriter: %s", err))
 		}
 	}()
 
@@ -219,8 +227,15 @@ func renderPartsToWriter(mimeBoundary string, parts []configPartModel, writer io
 		return err
 	}
 
-	writer.Write([]byte(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\n", mimeWriter.Boundary())))
-	writer.Write([]byte("MIME-Version: 1.0\r\n\r\n"))
+	_, err := writer.Write([]byte(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\n", mimeWriter.Boundary())))
+	if err != nil {
+		return err
+	}
+
+	_, err = writer.Write([]byte("MIME-Version: 1.0\r\n\r\n"))
+	if err != nil {
+		return err
+	}
 
 	for _, part := range parts {
 		header := textproto.MIMEHeader{}
