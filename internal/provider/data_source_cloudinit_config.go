@@ -1,14 +1,7 @@
 package provider
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
-	"encoding/base64"
-	"fmt"
-	"io"
-	"mime/multipart"
-	"net/textproto"
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
@@ -18,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-provider-cloudinit/internal/hashcode"
 )
 
@@ -28,28 +20,12 @@ var (
 
 type configDataSource struct{}
 
-type configDataSourceModel struct {
-	ID           types.String      `tfsdk:"id"`
-	Parts        []configPartModel `tfsdk:"part"`
-	Gzip         types.Bool        `tfsdk:"gzip"`
-	Base64Encode types.Bool        `tfsdk:"base64_encode"`
-	Boundary     types.String      `tfsdk:"boundary"`
-	Rendered     types.String      `tfsdk:"rendered"`
-}
-
-type configPartModel struct {
-	ContentType types.String `tfsdk:"content_type"`
-	Content     types.String `tfsdk:"content"`
-	FileName    types.String `tfsdk:"filename"`
-	MergeType   types.String `tfsdk:"merge_type"`
-}
-
 func (d *configDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_config"
 }
 
 func (*configDataSource) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config configDataSourceModel
+	var config configModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
@@ -145,7 +121,7 @@ func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 }
 
 func (d *configDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var newState configDataSourceModel
+	var newState configModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &newState)...)
 	if resp.Diagnostics.HasError() {
@@ -164,104 +140,4 @@ func (d *configDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	newState.Rendered = types.StringValue(renderedConfig)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
-}
-
-// NOTE: Currently it's not possible to specify default values against attributes of data sources in the schema.
-func setDefaultValues(d *configDataSourceModel) {
-	if d.Gzip.IsNull() {
-		d.Gzip = types.BoolValue(true)
-	}
-	if d.Base64Encode.IsNull() {
-		d.Base64Encode = types.BoolValue(true)
-	}
-	if d.Boundary.IsNull() {
-		d.Boundary = types.StringValue("MIMEBOUNDARY")
-	}
-
-	for i, part := range d.Parts {
-		if part.ContentType.IsNull() {
-			d.Parts[i].ContentType = types.StringValue("text/plain")
-		}
-	}
-}
-
-func renderCloudinitConfig(ctx context.Context, d *configDataSourceModel) (string, error) {
-	var buffer bytes.Buffer
-	var err error
-
-	if d.Gzip.ValueBool() {
-		gzipWriter := gzip.NewWriter(&buffer)
-		err = renderPartsToWriter(ctx, d.Boundary.ValueString(), d.Parts, gzipWriter)
-
-		gzipWriter.Close()
-	} else {
-		err = renderPartsToWriter(ctx, d.Boundary.ValueString(), d.Parts, &buffer)
-	}
-
-	if err != nil {
-		return "", fmt.Errorf("error writing part block to MIME multi-part file: %w", err)
-	}
-
-	output := ""
-	if d.Base64Encode.ValueBool() {
-		output = base64.StdEncoding.EncodeToString(buffer.Bytes())
-	} else {
-		output = buffer.String()
-	}
-
-	return output, nil
-}
-
-func renderPartsToWriter(ctx context.Context, mimeBoundary string, parts []configPartModel, writer io.Writer) error {
-	mimeWriter := multipart.NewWriter(writer)
-	defer func() {
-		err := mimeWriter.Close()
-		if err != nil {
-			tflog.Warn(ctx, fmt.Sprintf("error closing mimeWriter: %s", err))
-		}
-	}()
-
-	// we need to set the boundary explicitly, otherwise the boundary is random
-	// and this causes terraform to complain about the resource being different
-	if err := mimeWriter.SetBoundary(mimeBoundary); err != nil {
-		return err
-	}
-
-	_, err := writer.Write([]byte(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\n", mimeWriter.Boundary())))
-	if err != nil {
-		return err
-	}
-
-	_, err = writer.Write([]byte("MIME-Version: 1.0\r\n\r\n"))
-	if err != nil {
-		return err
-	}
-
-	for _, part := range parts {
-		header := textproto.MIMEHeader{}
-
-		header.Set("Content-Type", part.ContentType.ValueString())
-		header.Set("MIME-Version", "1.0")
-		header.Set("Content-Transfer-Encoding", "7bit")
-
-		if part.FileName.ValueString() != "" {
-			header.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, part.FileName.ValueString()))
-		}
-
-		if part.MergeType.ValueString() != "" {
-			header.Set("X-Merge-Type", part.MergeType.ValueString())
-		}
-
-		partWriter, err := mimeWriter.CreatePart(header)
-		if err != nil {
-			return err
-		}
-
-		_, err = partWriter.Write([]byte(part.Content.ValueString()))
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
