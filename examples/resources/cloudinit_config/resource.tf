@@ -3,8 +3,9 @@ resource "cloudinit_config" "foo" {
   base64_encode = false
 
   part {
+    content = "baz"
+
     content_type = "text/x-shellscript"
-    content      = "baz"
     filename     = "foobar.sh"
   }
 }
