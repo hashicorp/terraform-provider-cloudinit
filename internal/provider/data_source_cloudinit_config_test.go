@@ -149,7 +149,6 @@ func TestConfigDataSourceRender(t *testing.T) {
 	}
 }
 
-// TODO: this test was in initial provider, maybe not needed?
 // https://github.com/hashicorp/terraform/issues/13572
 func TestConfigDataSourceRender_handleErrors(t *testing.T) {
 	testCases := []struct {

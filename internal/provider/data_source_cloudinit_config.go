@@ -66,7 +66,6 @@ func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 						},
 					},
 				},
-				// TODO: add note about this being required in docs?
 				MarkdownDescription: "A nested block type which adds a file to the generated cloud-init configuration. Use multiple " +
 					"`part` blocks to specify multiple files, which will be included in order of declaration in the final MIME document.",
 			},
