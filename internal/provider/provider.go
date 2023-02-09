@@ -36,14 +36,11 @@ func (p *cloudinitProvider) Configure(ctx context.Context, req provider.Configur
 }
 
 func (p *cloudinitProvider) Resources(ctx context.Context) []func() resource.Resource {
-	// TODO: Resource shim was in old code?
-	// 		ResourcesMap: map[string]*schema.Resource{
-	// 			"cloudinit_config": schema.DataSourceResourceShim(
-	// 				"cloudinit_config",
-	// 				dataSourceCloudinitConfig(),
-	// 			),
-	// 		},
-	return []func() resource.Resource{}
+	return []func() resource.Resource{
+		func() resource.Resource {
+			return &configResource{}
+		},
+	}
 }
 
 func (p *cloudinitProvider) DataSources(ctx context.Context) []func() datasource.DataSource {

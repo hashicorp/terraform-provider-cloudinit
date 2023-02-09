@@ -7,15 +7,15 @@ import (
 	r "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestConfigDataSourceRender(t *testing.T) {
+func TestConfigResourceRender(t *testing.T) {
 	testCases := []struct {
-		Name            string
-		DataSourceBlock string
-		Expected        string
+		Name          string
+		ResourceBlock string
+		Expected      string
 	}{
 		{
 			"no gzip or b64 - basic content",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				gzip = false
 				base64_encode = false
 
@@ -28,7 +28,7 @@ func TestConfigDataSourceRender(t *testing.T) {
 		},
 		{
 			"no gzip or b64 - basic content - default to text plain",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				gzip = false
 				base64_encode = false
 
@@ -40,7 +40,7 @@ func TestConfigDataSourceRender(t *testing.T) {
 		},
 		{
 			"no gzip or b64 - content with filename",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				gzip = false
 				base64_encode = false
 
@@ -54,7 +54,7 @@ func TestConfigDataSourceRender(t *testing.T) {
 		},
 		{
 			"no gzip or b64 - two parts, basic content",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				gzip = false
 				base64_encode = false
 
@@ -71,7 +71,7 @@ func TestConfigDataSourceRender(t *testing.T) {
 		},
 		{
 			"no gzip or b64 - with boundary separator",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				gzip = false
 				base64_encode = false
 				boundary = "//"
@@ -85,7 +85,7 @@ func TestConfigDataSourceRender(t *testing.T) {
 		},
 		{
 			"no gzip or b64 - two parts - all fields",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				gzip = false
 				base64_encode = false
 
@@ -107,7 +107,7 @@ func TestConfigDataSourceRender(t *testing.T) {
 		},
 		{
 			"no gzip - b64 encoded - basic content",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				gzip = false
 				base64_encode = true
 
@@ -120,7 +120,7 @@ func TestConfigDataSourceRender(t *testing.T) {
 		},
 		{
 			"gzip compression - basic content",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				gzip = true
 
 				part {
@@ -138,9 +138,9 @@ func TestConfigDataSourceRender(t *testing.T) {
 				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
 				Steps: []r.TestStep{
 					{
-						Config: tt.DataSourceBlock,
+						Config: tt.ResourceBlock,
 						Check: r.ComposeTestCheckFunc(
-							r.TestCheckResourceAttr("data.cloudinit_config.foo", "rendered", tt.Expected),
+							r.TestCheckResourceAttr("cloudinit_config.foo", "rendered", tt.Expected),
 						),
 					},
 				},
@@ -151,15 +151,15 @@ func TestConfigDataSourceRender(t *testing.T) {
 
 // TODO: this test was in initial provider, maybe not needed?
 // https://github.com/hashicorp/terraform/issues/13572
-func TestConfigDataSourceRender_handleErrors(t *testing.T) {
+func TestConfigResourceRender_handleErrors(t *testing.T) {
 	testCases := []struct {
-		Name            string
-		DataSourceBlock string
-		ErrorMatch      *regexp.Regexp
+		Name          string
+		ResourceBlock string
+		ErrorMatch    *regexp.Regexp
 	}{
 		{
 			"empty content field in part block",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				part {
 					content = ""
 				}
@@ -168,7 +168,7 @@ func TestConfigDataSourceRender_handleErrors(t *testing.T) {
 		},
 		{
 			"base64 can't be false when gzip is true",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				gzip = true
 				base64_encode = false
 
@@ -180,7 +180,7 @@ func TestConfigDataSourceRender_handleErrors(t *testing.T) {
 		},
 		{
 			"at least one part is required",
-			`data "cloudinit_config" "foo" {
+			`resource "cloudinit_config" "foo" {
 				gzip = false
 				base64_encode = false
 			}`,
@@ -194,7 +194,7 @@ func TestConfigDataSourceRender_handleErrors(t *testing.T) {
 				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
 				Steps: []r.TestStep{
 					{
-						Config:      tt.DataSourceBlock,
+						Config:      tt.ResourceBlock,
 						ExpectError: tt.ErrorMatch,
 					},
 				},

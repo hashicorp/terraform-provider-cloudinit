@@ -9,9 +9,13 @@ import (
 	"io"
 	"mime/multipart"
 	"net/textproto"
+	"strconv"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-provider-cloudinit/internal/hashcode"
 )
 
 // Model and functionality of data source and resource are equivalent.
@@ -31,23 +35,38 @@ type configPartModel struct {
 	MergeType   types.String `tfsdk:"merge_type"`
 }
 
-// NOTE: Currently it's not possible to specify default values against attributes of data sources in the schema.
-func setDefaultValues(c *configModel) {
-	if c.Gzip.IsNull() {
-		c.Gzip = types.BoolValue(true)
+func validateConfigModel(config configModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	if config.Gzip.IsUnknown() || config.Base64Encode.IsUnknown() {
+		return diags
 	}
-	if c.Base64Encode.IsNull() {
-		c.Base64Encode = types.BoolValue(true)
-	}
-	if c.Boundary.IsNull() {
-		c.Boundary = types.StringValue("MIMEBOUNDARY")
+	setDefaultValues(&config)
+
+	if config.Gzip.ValueBool() && !config.Base64Encode.ValueBool() {
+		diags.AddAttributeError(
+			path.Root("base64_encode"),
+			"Invalid Attribute Configuration",
+			"Expected base64_encode to be set to true when gzip is true.",
+		)
 	}
 
-	for i, part := range c.Parts {
-		if part.ContentType.IsNull() {
-			c.Parts[i].ContentType = types.StringValue("text/plain")
-		}
+	return diags
+}
+
+func updateConfigModel(ctx context.Context, config *configModel) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	renderedConfig, err := renderCloudinitConfig(ctx, config)
+	if err != nil {
+		diags.AddError("Unable to render cloudinit config", err.Error())
+		return diags
 	}
+
+	config.ID = types.StringValue(strconv.Itoa(hashcode.String(renderedConfig)))
+	config.Rendered = types.StringValue(renderedConfig)
+
+	return diags
 }
 
 func renderCloudinitConfig(ctx context.Context, c *configModel) (string, error) {
@@ -129,4 +148,22 @@ func renderPartsToWriter(ctx context.Context, mimeBoundary string, parts []confi
 	}
 
 	return nil
+}
+
+func setDefaultValues(c *configModel) {
+	if c.Gzip.IsNull() {
+		c.Gzip = types.BoolValue(true)
+	}
+	if c.Base64Encode.IsNull() {
+		c.Base64Encode = types.BoolValue(true)
+	}
+	if c.Boundary.IsNull() {
+		c.Boundary = types.StringValue("MIMEBOUNDARY")
+	}
+
+	for i, part := range c.Parts {
+		if part.ContentType.IsNull() {
+			c.Parts[i].ContentType = types.StringValue("text/plain")
+		}
+	}
 }

@@ -5,22 +5,28 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-provider-cloudinit/internal/provider/attribute_plan_modifier_bool"
+	"github.com/hashicorp/terraform-provider-cloudinit/internal/provider/attribute_plan_modifier_string"
 )
 
 var (
-	_ datasource.DataSourceWithValidateConfig = (*configDataSource)(nil)
+	_ resource.ResourceWithValidateConfig = (*configResource)(nil)
 )
 
-type configDataSource struct{}
+type configResource struct{}
 
-func (d *configDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (r *configResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_config"
 }
 
-func (d *configDataSource) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+func (r *configResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var config configModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -31,7 +37,7 @@ func (d *configDataSource) ValidateConfig(ctx context.Context, req datasource.Va
 	resp.Diagnostics.Append(validateConfigModel(config)...)
 }
 
-func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (r *configResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Blocks: map[string]schema.Block{
 			"part": schema.ListNestedBlock{
@@ -44,6 +50,10 @@ func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 							Validators: []validator.String{
 								stringvalidator.LengthAtLeast(1),
 							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+								attribute_plan_modifier_string.DefaultValue(types.StringValue("text/plain")),
+							},
 							Optional:            true,
 							Computed:            true,
 							MarkdownDescription: "A MIME-style content type to report in the header for the part. Defaults to `text/plain`",
@@ -52,14 +62,23 @@ func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 							Validators: []validator.String{
 								stringvalidator.LengthAtLeast(1),
 							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 							Required:            true,
 							MarkdownDescription: "Body content for the part.",
 						},
 						"filename": schema.StringAttribute{
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 							Optional:            true,
 							MarkdownDescription: "A filename to report in the header for the part.",
 						},
 						"merge_type": schema.StringAttribute{
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 							Optional: true,
 							MarkdownDescription: "A value for the `X-Merge-Type` header of the part, to control " +
 								"[cloud-init merging behavior](https://cloudinit.readthedocs.io/en/latest/reference/merging.html).",
@@ -73,11 +92,19 @@ func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 		},
 		Attributes: map[string]schema.Attribute{
 			"gzip": schema.BoolAttribute{
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+					attribute_plan_modifier_bool.DefaultValue(types.BoolValue(true)),
+				},
 				Optional:            true,
 				Computed:            true,
 				MarkdownDescription: "Specify whether or not to gzip the `rendered` output. Defaults to `true`.",
 			},
 			"base64_encode": schema.BoolAttribute{
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+					attribute_plan_modifier_bool.DefaultValue(types.BoolValue(true)),
+				},
 				Optional:            true,
 				Computed:            true,
 				MarkdownDescription: "Specify whether or not to base64 encode the `rendered` output. Defaults to `true`, and cannot be disabled if gzip is `true`.",
@@ -85,6 +112,10 @@ func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 			"boundary": schema.StringAttribute{
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+					attribute_plan_modifier_string.DefaultValue(types.StringValue("MIMEBOUNDARY")),
 				},
 				Optional:            true,
 				Computed:            true,
@@ -99,25 +130,37 @@ func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 				MarkdownDescription: "[CRC-32](https://pkg.go.dev/hash/crc32) checksum of `rendered` cloud-init config.",
 			},
 		},
-		MarkdownDescription: "Renders a [multi-part MIME configuration](https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive) " +
-			"for use with [cloud-init](https://cloudinit.readthedocs.io/en/latest/).\n\n" +
-			"Cloud-init is a commonly-used startup configuration utility for cloud compute instances. It accepts configuration via provider-specific " +
-			"user data mechanisms, such as `user_data` for Amazon EC2 instances. Multi-part MIME is one of the data formats it accepts. For more information, " +
-			"see [User-Data Formats](https://cloudinit.readthedocs.io/en/latest/explanation/format.html) in the cloud-init manual.\n\n" +
-			"This is not a generalized utility for producing multi-part MIME messages. It's feature set is specialized for cloud-init multi-part MIME messages.",
+		MarkdownDescription: `**NOTE**: This resource is deprecated, use data source instead.`,
+		DeprecationMessage:  `**NOTE**: This resource is deprecated, use data source instead.`,
 	}
 }
 
-func (d *configDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (r *configResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var newState configModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &newState)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &newState)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// NOTE: Currently it's not possible to specify default values against attributes of data sources in the schema.
-	setDefaultValues(&newState)
 
 	resp.Diagnostics.Append(updateConfigModel(ctx, &newState)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
+}
+
+func (r *configResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var newState configModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &newState)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(updateConfigModel(ctx, &newState)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
+}
+
+func (r *configResource) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
+}
+
+func (r *configResource) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
 }
