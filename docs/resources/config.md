@@ -1,7 +1,9 @@
 ---
 page_title: "cloudinit_config Resource - terraform-provider-cloudinit"
 description: |-
-  NOTE: This resource is deprecated, use data source instead.
+  Renders a multi-part MIME configuration https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive for use with cloud-init https://cloudinit.readthedocs.io/en/latest/.
+  Cloud-init is a commonly-used startup configuration utility for cloud compute instances. It accepts configuration via provider-specific user data mechanisms, such as user_data for Amazon EC2 instances. Multi-part MIME is one of the data formats it accepts. For more information, see User-Data Formats https://cloudinit.readthedocs.io/en/latest/explanation/format.html in the cloud-init manual.
+  This is not a generalized utility for producing multi-part MIME messages. It's feature set is specialized for cloud-init multi-part MIME messages.
 ---
 
 # cloudinit_config (Resource)
@@ -9,18 +11,31 @@ description: |-
 ~> **This resource is deprecated** Please use the [cloudinit_config](https://registry.terraform.io/providers/hashicorp/cloudinit/latest/docs/data-sources/cloudinit_config)
   data source instead.
 
+Renders a [multi-part MIME configuration](https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive) for use with [cloud-init](https://cloudinit.readthedocs.io/en/latest/).
+
+Cloud-init is a commonly-used startup configuration utility for cloud compute instances. It accepts configuration via provider-specific user data mechanisms, such as `user_data` for Amazon EC2 instances. Multi-part MIME is one of the data formats it accepts. For more information, see [User-Data Formats](https://cloudinit.readthedocs.io/en/latest/explanation/format.html) in the cloud-init manual.
+
+This is not a generalized utility for producing multi-part MIME messages. It's feature set is specialized for cloud-init multi-part MIME messages.
+
 ## Example Usage
 
 ```terraform
-resource "cloudinit_config" "foo" {
+resource "cloudinit_config" "foobar" {
   gzip          = false
   base64_encode = false
 
   part {
-    content = "baz"
+    content = "foo"
 
     content_type = "text/x-shellscript"
-    filename     = "foobar.sh"
+    filename     = "foo.sh"
+  }
+
+  part {
+    content = "bar"
+
+    content_type = "text/x-shellscript"
+    filename     = "bar.sh"
   }
 }
 ```

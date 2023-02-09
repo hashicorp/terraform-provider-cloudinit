@@ -129,8 +129,13 @@ func (r *configResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				MarkdownDescription: "[CRC-32](https://pkg.go.dev/hash/crc32) checksum of `rendered` cloud-init config.",
 			},
 		},
-		MarkdownDescription: `**NOTE**: This resource is deprecated, use data source instead.`,
-		DeprecationMessage:  `**NOTE**: This resource is deprecated, use data source instead.`,
+		DeprecationMessage: `This resource is deprecated, please use the cloudinit_config data source instead.`,
+		MarkdownDescription: "Renders a [multi-part MIME configuration](https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive) " +
+			"for use with [cloud-init](https://cloudinit.readthedocs.io/en/latest/).\n\n" +
+			"Cloud-init is a commonly-used startup configuration utility for cloud compute instances. It accepts configuration via provider-specific " +
+			"user data mechanisms, such as `user_data` for Amazon EC2 instances. Multi-part MIME is one of the data formats it accepts. For more information, " +
+			"see [User-Data Formats](https://cloudinit.readthedocs.io/en/latest/explanation/format.html) in the cloud-init manual.\n\n" +
+			"This is not a generalized utility for producing multi-part MIME messages. It's feature set is specialized for cloud-init multi-part MIME messages.",
 	}
 }
 

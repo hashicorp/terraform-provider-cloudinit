@@ -1,11 +1,18 @@
-resource "cloudinit_config" "foo" {
+resource "cloudinit_config" "foobar" {
   gzip          = false
   base64_encode = false
 
   part {
-    content = "baz"
+    content = "foo"
 
     content_type = "text/x-shellscript"
-    filename     = "foobar.sh"
+    filename     = "foo.sh"
+  }
+
+  part {
+    content = "bar"
+
+    content_type = "text/x-shellscript"
+    filename     = "bar.sh"
   }
 }

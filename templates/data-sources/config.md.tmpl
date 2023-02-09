@@ -1,0 +1,15 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description }}
+
+## Example Usage
+
+{{ tffile "examples/data-sources/cloudinit_config/data-source.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}

@@ -1,13 +1,15 @@
 ---
-page_title: "cloudinit_config Resource - terraform-provider-cloudinit"
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
 description: |-
-  {{ .Description | plainmarkdown }}
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
 ---
 
 # {{.Name}} ({{.Type}})
 
 ~> **This resource is deprecated** Please use the [cloudinit_config](https://registry.terraform.io/providers/hashicorp/cloudinit/latest/docs/data-sources/cloudinit_config)
   data source instead.
+
+{{ .Description }}
 
 ## Example Usage
 
