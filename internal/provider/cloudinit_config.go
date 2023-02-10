@@ -57,6 +57,10 @@ func validateConfigModel(config configModel) diag.Diagnostics {
 func updateConfigModel(ctx context.Context, config *configModel) diag.Diagnostics {
 	var diags diag.Diagnostics
 
+	// v2.2.0 doesn't actually set default values in state properly, so we need to make sure
+	// that we don't use any known empty values from previous versions of state
+	setDefaultValues(config)
+
 	renderedConfig, err := renderCloudinitConfig(ctx, config)
 	if err != nil {
 		diags.AddError("Unable to render cloudinit config", err.Error())
@@ -162,7 +166,7 @@ func setDefaultValues(c *configModel) {
 	}
 
 	for i, part := range c.Parts {
-		if part.ContentType.IsNull() {
+		if part.ContentType.IsNull() || part.ContentType.ValueString() == "" {
 			c.Parts[i].ContentType = types.StringValue("text/plain")
 		}
 	}
