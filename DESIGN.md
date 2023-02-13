@@ -1,6 +1,6 @@
 # cloud-init Provider Design
 
- Cloud-init is a commonly-used startup configuration utility for cloud compute instances. The cloud-init provider offers functionality to render a MIME multi-part file for use with cloud-init. Using a MIME multi-part file, the user can specify more than one type of data for cloud-init to consume. If you only have one type of data, you can leverage the built-in [`templatefile`](https://www.terraform.io/docs/configuration/functions/templatefile.html) function and a static file (like `.yml`).
+ Cloud-init is a commonly-used startup configuration utility for cloud compute instances. The cloud-init provider offers functionality to render a MIME multi-part file for use with cloud-init. Using a MIME multi-part file, the user can specify more than one type of user data for cloud-init to consume. If you only have one type of user data, you can leverage the built-in [`templatefile`](https://www.terraform.io/docs/configuration/functions/templatefile.html) function and a static file (like `.yml`).
 
 Below we have a collection of _Goals_ and _Patterns_: they represent the guiding principles applied during the
 development of this provider. Some are in place, others are ongoing processes, others are still just inspirational.
@@ -9,6 +9,8 @@ development of this provider. Some are in place, others are ongoing processes, o
 
 * [_Stability over features_](.github/CONTRIBUTING.md)
 * Provide a managed resource and data source to generate a cloud-init MIME multi-part file
+  * This multi-part file can include multiple user data formats, such as **[Cloud config](https://cloudinit.readthedocs.io/en/latest/explanation/format.html#cloud-config-data)** or **[Shell scripts](https://cloudinit.readthedocs.io/en/latest/explanation/format.html#user-data-script)**
+  * See the official [cloud-init](https://cloudinit.readthedocs.io/en/latest/explanation/index.html) documentation for more information on user data formats and cloud provider specific documentation
 
 ## Patterns
 
