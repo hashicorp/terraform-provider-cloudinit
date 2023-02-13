@@ -15,4 +15,34 @@ description: |-
 
 {{ tffile "examples/resources/cloudinit_config/resource.tf" }}
 
-{{ .SchemaMarkdown | trimspace }}
+<!-- This schema was originally generated with tfplugindocs, then modified manually to ensure `part` block list is noted as Required -->
+
+## Schema
+
+### Required
+
+- `part` (Block List) A nested block type which adds a file to the generated cloud-init configuration. Use multiple `part` blocks to specify multiple files, which will be included in order of declaration in the final MIME document. (see [below for nested schema](#nestedblock--part))
+
+### Optional
+
+- `base64_encode` (Boolean) Specify whether or not to base64 encode the `rendered` output. Defaults to `true`, and cannot be disabled if gzip is `true`.
+- `boundary` (String) Specify the Writer's default boundary separator. Defaults to `MIMEBOUNDARY`.
+- `gzip` (Boolean) Specify whether or not to gzip the `rendered` output. Defaults to `true`.
+
+### Read-Only
+
+- `id` (String) [CRC-32](https://pkg.go.dev/hash/crc32) checksum of `rendered` cloud-init config.
+- `rendered` (String) The final rendered multi-part cloud-init config.
+
+<a id="nestedblock--part"></a>
+### Nested Schema for `part`
+
+Required:
+
+- `content` (String) Body content for the part.
+
+Optional:
+
+- `content_type` (String) A MIME-style content type to report in the header for the part. Defaults to `text/plain`
+- `filename` (String) A filename to report in the header for the part.
+- `merge_type` (String) A value for the `X-Merge-Type` header of the part, to control [cloud-init merging behavior](https://cloudinit.readthedocs.io/en/latest/reference/merging.html).
