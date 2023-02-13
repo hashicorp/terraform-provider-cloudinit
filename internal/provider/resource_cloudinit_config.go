@@ -27,14 +27,14 @@ func (r *configResource) Metadata(ctx context.Context, req resource.MetadataRequ
 }
 
 func (r *configResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config configModel
+	var cloudinitConfig configModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &cloudinitConfig)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.Diagnostics.Append(validateConfigModel(config)...)
+	resp.Diagnostics.Append(cloudinitConfig.validate()...)
 }
 
 func (r *configResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -140,27 +140,27 @@ func (r *configResource) Schema(ctx context.Context, req resource.SchemaRequest,
 }
 
 func (r *configResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var newState configModel
+	var cloudinitConfig configModel
 
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &newState)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &cloudinitConfig)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.Diagnostics.Append(updateConfigModel(ctx, &newState)...)
-	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
+	resp.Diagnostics.Append(cloudinitConfig.update(ctx)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, cloudinitConfig)...)
 }
 
 func (r *configResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var newState configModel
+	var cloudinitConfig configModel
 
-	resp.Diagnostics.Append(req.State.Get(ctx, &newState)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &cloudinitConfig)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.Diagnostics.Append(updateConfigModel(ctx, &newState)...)
-	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
+	resp.Diagnostics.Append(cloudinitConfig.update(ctx)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, cloudinitConfig)...)
 }
 
 func (r *configResource) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {

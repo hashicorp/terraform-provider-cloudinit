@@ -35,15 +35,33 @@ type configPartModel struct {
 	MergeType   types.String `tfsdk:"merge_type"`
 }
 
-func validateConfigModel(config configModel) diag.Diagnostics {
+func (c *configModel) setDefaults() {
+	if c.Gzip.IsNull() {
+		c.Gzip = types.BoolValue(true)
+	}
+	if c.Base64Encode.IsNull() {
+		c.Base64Encode = types.BoolValue(true)
+	}
+	if c.Boundary.IsNull() {
+		c.Boundary = types.StringValue("MIMEBOUNDARY")
+	}
+
+	for i, part := range c.Parts {
+		if part.ContentType.IsNull() || part.ContentType.ValueString() == "" {
+			c.Parts[i].ContentType = types.StringValue("text/plain")
+		}
+	}
+}
+
+func (c configModel) validate() diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	if config.Gzip.IsUnknown() || config.Base64Encode.IsUnknown() {
+	if c.Gzip.IsUnknown() || c.Base64Encode.IsUnknown() {
 		return diags
 	}
-	setDefaultValues(&config)
+	c.setDefaults()
 
-	if config.Gzip.ValueBool() && !config.Base64Encode.ValueBool() {
+	if c.Gzip.ValueBool() && !c.Base64Encode.ValueBool() {
 		diags.AddAttributeError(
 			path.Root("base64_encode"),
 			"Invalid Attribute Configuration",
@@ -54,28 +72,14 @@ func validateConfigModel(config configModel) diag.Diagnostics {
 	return diags
 }
 
-func updateConfigModel(ctx context.Context, config *configModel) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	// v2.2.0 doesn't actually set default values in state properly, so we need to make sure
-	// that we don't use any known empty values from previous versions of state
-	setDefaultValues(config)
-
-	renderedConfig, err := renderCloudinitConfig(ctx, config)
-	if err != nil {
-		diags.AddError("Unable to render cloudinit config", err.Error())
-		return diags
-	}
-
-	config.ID = types.StringValue(strconv.Itoa(hashcode.String(renderedConfig)))
-	config.Rendered = types.StringValue(renderedConfig)
-
-	return diags
-}
-
-func renderCloudinitConfig(ctx context.Context, c *configModel) (string, error) {
+func (c *configModel) update(ctx context.Context) diag.Diagnostics {
 	var buffer bytes.Buffer
+	var diags diag.Diagnostics
 	var err error
+
+	// cloudinit Provider 'v2.2.0' doesn't actually set default values in state properly, so we need to make sure
+	// that we don't use any known empty values from previous versions of state
+	c.setDefaults()
 
 	if c.Gzip.ValueBool() {
 		gzipWriter := gzip.NewWriter(&buffer)
@@ -87,7 +91,8 @@ func renderCloudinitConfig(ctx context.Context, c *configModel) (string, error) 
 	}
 
 	if err != nil {
-		return "", fmt.Errorf("error writing part block to MIME multi-part file: %w", err)
+		diags.AddError("Unable to render cloudinit config to MIME multi-part file", err.Error())
+		return diags
 	}
 
 	output := ""
@@ -97,7 +102,10 @@ func renderCloudinitConfig(ctx context.Context, c *configModel) (string, error) 
 		output = buffer.String()
 	}
 
-	return output, nil
+	c.ID = types.StringValue(strconv.Itoa(hashcode.String(output)))
+	c.Rendered = types.StringValue(output)
+
+	return diags
 }
 
 func renderPartsToWriter(ctx context.Context, mimeBoundary string, parts []configPartModel, writer io.Writer) error {
@@ -152,22 +160,4 @@ func renderPartsToWriter(ctx context.Context, mimeBoundary string, parts []confi
 	}
 
 	return nil
-}
-
-func setDefaultValues(c *configModel) {
-	if c.Gzip.IsNull() {
-		c.Gzip = types.BoolValue(true)
-	}
-	if c.Base64Encode.IsNull() {
-		c.Base64Encode = types.BoolValue(true)
-	}
-	if c.Boundary.IsNull() {
-		c.Boundary = types.StringValue("MIMEBOUNDARY")
-	}
-
-	for i, part := range c.Parts {
-		if part.ContentType.IsNull() || part.ContentType.ValueString() == "" {
-			c.Parts[i].ContentType = types.StringValue("text/plain")
-		}
-	}
 }

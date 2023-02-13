@@ -21,14 +21,14 @@ func (d *configDataSource) Metadata(ctx context.Context, req datasource.Metadata
 }
 
 func (d *configDataSource) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config configModel
+	var cloudinitConfig configModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &cloudinitConfig)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.Diagnostics.Append(validateConfigModel(config)...)
+	resp.Diagnostics.Append(cloudinitConfig.validate()...)
 }
 
 func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -108,15 +108,13 @@ func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 }
 
 func (d *configDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var newState configModel
+	var cloudinitConfig configModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &newState)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &cloudinitConfig)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// NOTE: Currently it's not possible to specify default values against attributes of data sources in the schema.
-	setDefaultValues(&newState)
 
-	resp.Diagnostics.Append(updateConfigModel(ctx, &newState)...)
-	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
+	resp.Diagnostics.Append(cloudinitConfig.update(ctx)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, cloudinitConfig)...)
 }
