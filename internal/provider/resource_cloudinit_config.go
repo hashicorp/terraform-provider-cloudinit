@@ -152,15 +152,6 @@ func (r *configResource) Create(ctx context.Context, req resource.CreateRequest,
 }
 
 func (r *configResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var cloudinitConfig configModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &cloudinitConfig)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	resp.Diagnostics.Append(cloudinitConfig.update(ctx)...)
-	resp.Diagnostics.Append(resp.State.Set(ctx, cloudinitConfig)...)
 }
 
 func (r *configResource) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
