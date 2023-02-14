@@ -3,16 +3,16 @@ resource "cloudinit_config" "foobar" {
   base64_encode = false
 
   part {
-    content = "foo"
-
+    filename     = "hello-script.sh"
     content_type = "text/x-shellscript"
-    filename     = "foo.sh"
+
+    content = file("./hello-script.sh")
   }
 
   part {
-    content = "bar"
+    filename     = "cloud-config.yaml"
+    content_type = "text/cloud-config"
 
-    content_type = "text/x-shellscript"
-    filename     = "bar.sh"
+    content = file("./cloud-config.yaml")
   }
 }

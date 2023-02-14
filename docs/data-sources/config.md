@@ -16,25 +16,51 @@ This is not a generalized utility for producing multi-part MIME messages. It's f
 
 ## Example Usage
 
+### Config
 ```terraform
 data "cloudinit_config" "foobar" {
   gzip          = false
   base64_encode = false
 
   part {
-    content = "foo"
-
+    filename     = "hello-script.sh"
     content_type = "text/x-shellscript"
-    filename     = "foo.sh"
+
+    content = file("./hello-script.sh")
   }
 
   part {
-    content = "bar"
+    filename     = "cloud-config.yaml"
+    content_type = "text/cloud-config"
 
-    content_type = "text/x-shellscript"
-    filename     = "bar.sh"
+    content = file("./cloud-config.yaml")
   }
 }
+```
+
+### hello-script.sh
+```shell
+#!/bin/sh
+echo "Hello World! I'm starting up now at $(date -R)!"
+```
+
+### cloud-config.yaml
+```yaml
+#cloud-config
+# See documentation for more configuration examples
+# https://cloudinit.readthedocs.io/en/latest/reference/examples.html 
+
+# Install arbitrary packages
+# https://cloudinit.readthedocs.io/en/latest/reference/examples.html#install-arbitrary-packages
+packages:
+  - python
+# Run commands on first boot
+# https://cloudinit.readthedocs.io/en/latest/reference/examples.html#run-commands-on-first-boot
+runcmd:
+ - [ ls, -l, / ]
+ - [ sh, -xc, "echo $(date) ': hello world!'" ]
+ - [ sh, -c, echo "=========hello world=========" ]
+ - ls -l /root
 ```
 
 <!-- This schema was originally generated with tfplugindocs, then modified manually to ensure `part` block list is noted as Required -->
