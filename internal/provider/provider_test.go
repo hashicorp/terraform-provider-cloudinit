@@ -1,11 +1,10 @@
 package provider
 
 import (
-	"testing"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 )
 
-func TestProvider(t *testing.T) {
-	if err := New().InternalValidate(); err != nil {
-		t.Fatalf("err: %s", err)
-	}
+var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, error){
+	"cloudinit": providerserver.NewProtocol5WithError(New()),
 }
