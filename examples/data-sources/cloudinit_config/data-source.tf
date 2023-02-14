@@ -6,13 +6,13 @@ data "cloudinit_config" "foobar" {
     filename     = "hello-script.sh"
     content_type = "text/x-shellscript"
 
-    content = file("./hello-script.sh")
+    content = file("${path.module}/hello-script.sh")
   }
 
   part {
     filename     = "cloud-config.yaml"
     content_type = "text/cloud-config"
 
-    content = file("./cloud-config.yaml")
+    content = file("${path.module}/cloud-config.yaml")
   }
 }
