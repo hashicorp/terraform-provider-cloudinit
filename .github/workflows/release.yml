@@ -12,9 +12,6 @@ env:
   CI_COMMIT_AUTHOR: hc-github-team-tf-provider-devex
   CI_COMMIT_EMAIL: github-team-tf-provider-devex@hashicorp.com
 
-permissions:
-  contents: write
-
 jobs:
   changelog-version:
     runs-on: ubuntu-latest
@@ -30,6 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
+          token: ${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}
           fetch-depth: 0
       - name: Batch changes
         uses: miniscruff/changie-action@b6d52c80deb236a5b548f8774cd5a18b87da9e9a # v1.0.1
@@ -37,14 +35,14 @@ jobs:
           version: latest
           args: batch ${{ needs.changelog-version.outputs.version }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}
       - name: Merge changes
         uses: miniscruff/changie-action@b6d52c80deb236a5b548f8774cd5a18b87da9e9a # v1.0.1
         with:
           version: latest
           args: merge
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}
       - name: Git push changelog
         run: |
           git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
@@ -59,6 +57,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
+          token: ${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}
           fetch-depth: 0
       - name: Git push release tag
         run: |
@@ -73,6 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
+          token: ${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}
           ref: ${{ inputs.versionNumber }}
           fetch-depth: 0
       - name: Generate Release Notes
