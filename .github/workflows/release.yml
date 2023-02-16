@@ -8,6 +8,9 @@ on:
         type: string
         required: true
 
+permissions:
+  contents: read # Write operations use service account token
+
 env:
   CI_COMMIT_AUTHOR: hc-github-team-tf-provider-devex
   CI_COMMIT_EMAIL: github-team-tf-provider-devex@hashicorp.com
@@ -20,6 +23,7 @@ jobs:
     steps:
       - id: changelog-version
         run: echo "version=$(echo "${{ inputs.versionNumber }}" | cut -c 2-)" >> "$GITHUB_OUTPUT"
+
   changelog:
     needs: changelog-version
     runs-on: ubuntu-latest
@@ -27,29 +31,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
-          token: ${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}
           fetch-depth: 0
+          persist-credentials: false
+
       - name: Batch changes
         uses: miniscruff/changie-action@b6d52c80deb236a5b548f8774cd5a18b87da9e9a # v1.0.1
         with:
           version: latest
           args: batch ${{ needs.changelog-version.outputs.version }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}
+
       - name: Merge changes
         uses: miniscruff/changie-action@b6d52c80deb236a5b548f8774cd5a18b87da9e9a # v1.0.1
         with:
           version: latest
           args: merge
-        env:
-          GITHUB_TOKEN: ${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}
+
       - name: Git push changelog
         run: |
           git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
           git config --global user.email "${{ env.CI_COMMIT_EMAIL }}"
           git add .
-          git commit -a -m "Update changelog"
-          git push
+          git commit -a -m "[skip ci] Update changelog"
+          git push "https://${{ env.CI_COMMIT_AUTHOR }}:${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
   release-tag:
     needs: changelog
     runs-on: ubuntu-latest
@@ -57,33 +61,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
-          token: ${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}
           fetch-depth: 0
+          persist-credentials: false
+
       - name: Git push release tag
         run: |
           git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
           git config --global user.email "${{ env.CI_COMMIT_EMAIL }}"
-          git pull
+          
           git tag "${{ inputs.versionNumber }}"
-          git push origin "${{ inputs.versionNumber }}"
+          git push "https://${{ env.CI_COMMIT_AUTHOR }}:${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "${{ inputs.versionNumber }}"
+
   release-notes:
     needs: [ changelog-version, changelog, release-tag ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
         with:
-          token: ${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}
           ref: ${{ inputs.versionNumber }}
           fetch-depth: 0
+
       - name: Generate Release Notes
         run: |
           cd .changes
           sed -e "1{/# /d;}" -e "2{/^$/d;}" ${{ needs.changelog-version.outputs.version }}.md > release-notes.txt
+
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: release-notes
           path: ./.changes/release-notes.txt
           retention-days: 1
+
   terraform-provider-release:
     name: 'Terraform Provider Release'
     needs: [ release-notes ]
