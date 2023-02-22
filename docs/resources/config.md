@@ -8,7 +8,7 @@ description: |-
 
 # cloudinit_config (Resource)
 
-~> **This resource is deprecated** Please use the [cloudinit_config](https://registry.terraform.io/providers/hashicorp/cloudinit/latest/docs/data-sources/cloudinit_config)
+~> **This resource is deprecated** Please use the [cloudinit_config](https://registry.terraform.io/providers/hashicorp/cloudinit/latest/docs/data-sources/config)
   data source instead.
 
 Renders a [multi-part MIME configuration](https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive) for use with [cloud-init](https://cloudinit.readthedocs.io/en/latest/).
