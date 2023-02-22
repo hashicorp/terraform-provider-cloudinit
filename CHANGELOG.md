@@ -1,3 +1,9 @@
+## 2.3.1 (February 22, 2023)
+
+BUG FIXES:
+
+* cloudinit_config: Fixed handling of unknown values in `part` blocks ([#103](https://github.com/hashicorp/terraform-provider-cloudinit/issues/103))
+
 ## 2.3.0 (February 22, 2023)
 
 NOTES:
