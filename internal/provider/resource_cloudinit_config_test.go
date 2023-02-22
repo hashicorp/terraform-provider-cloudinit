@@ -260,6 +260,7 @@ func TestConfigResource_UpgradeFromVersion2_2_0(t *testing.T) {
 	}
 }
 
+// This test ensures that unknown values are being handled properly in the `part` block
 // https://github.com/hashicorp/terraform-provider-cloudinit/issues/102
 func TestConfigResource_HandleUnknown(t *testing.T) {
 	testCases := []struct {
