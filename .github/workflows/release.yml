@@ -9,7 +9,7 @@ on:
         required: true
 
 permissions:
-  contents: read # Write operations use service account PAT
+  contents: read # Changelog commit operations use service account PAT
 
 env:
   CI_COMMIT_AUTHOR: hc-github-team-tf-provider-devex
@@ -102,6 +102,8 @@ jobs:
   terraform-provider-release:
     name: 'Terraform Provider Release'
     needs: [ release-notes ]
+    permissions:
+      contents: write # Needed for goreleaser to create GitHub release
     uses: hashicorp/ghaction-terraform-provider-release/.github/workflows/hashicorp.yml@106e6d08159ccec423310cc2c706bae59f46c09c # v2.2.0
     secrets:
       hc-releases-key-prod: '${{ secrets.HC_RELEASES_KEY_PROD }}'
