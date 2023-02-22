@@ -20,12 +20,12 @@ import (
 
 // Model and functionality of data source and resource are equivalent.
 type configModel struct {
-	ID           types.String      `tfsdk:"id"`
-	Parts        []configPartModel `tfsdk:"part"`
-	Gzip         types.Bool        `tfsdk:"gzip"`
-	Base64Encode types.Bool        `tfsdk:"base64_encode"`
-	Boundary     types.String      `tfsdk:"boundary"`
-	Rendered     types.String      `tfsdk:"rendered"`
+	ID           types.String `tfsdk:"id"`
+	Parts        types.List   `tfsdk:"part"` // configPartModel
+	Gzip         types.Bool   `tfsdk:"gzip"`
+	Base64Encode types.Bool   `tfsdk:"base64_encode"`
+	Boundary     types.String `tfsdk:"boundary"`
+	Rendered     types.String `tfsdk:"rendered"`
 }
 
 type configPartModel struct {
@@ -35,7 +35,9 @@ type configPartModel struct {
 	MergeType   types.String `tfsdk:"merge_type"`
 }
 
-func (c *configModel) setDefaults() {
+func (c *configModel) setDefaults(ctx context.Context) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	if c.Gzip.IsNull() {
 		c.Gzip = types.BoolValue(true)
 	}
@@ -46,20 +48,43 @@ func (c *configModel) setDefaults() {
 		c.Boundary = types.StringValue("MIMEBOUNDARY")
 	}
 
-	for i, part := range c.Parts {
+	if c.Parts.IsNull() || c.Parts.IsUnknown() {
+		return diags
+	}
+
+	var configParts []configPartModel
+	diags.Append(c.Parts.ElementsAs(ctx, &configParts, false)...)
+	if diags.HasError() {
+		return diags
+	}
+
+	for i, part := range configParts {
 		if part.ContentType.IsNull() || part.ContentType.ValueString() == "" {
-			c.Parts[i].ContentType = types.StringValue("text/plain")
+			configParts[i].ContentType = types.StringValue("text/plain")
 		}
 	}
+
+	partsList, convertDiags := types.ListValueFrom(ctx, c.Parts.ElementType(ctx), configParts)
+	diags.Append(convertDiags...)
+	if diags.HasError() {
+		return diags
+	}
+
+	c.Parts = partsList
+
+	return diags
 }
 
-func (c configModel) validate() diag.Diagnostics {
+func (c configModel) validate(ctx context.Context) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	if c.Gzip.IsUnknown() || c.Base64Encode.IsUnknown() {
 		return diags
 	}
-	c.setDefaults()
+	diags.Append(c.setDefaults(ctx)...)
+	if diags.HasError() {
+		return diags
+	}
 
 	if c.Gzip.ValueBool() && !c.Base64Encode.ValueBool() {
 		diags.AddAttributeError(
@@ -79,15 +104,25 @@ func (c *configModel) update(ctx context.Context) diag.Diagnostics {
 
 	// cloudinit Provider 'v2.2.0' doesn't actually set default values in state properly, so we need to make sure
 	// that we don't use any known empty values from previous versions of state
-	c.setDefaults()
+	diags.Append(c.setDefaults(ctx)...)
+	if diags.HasError() {
+		return diags
+	}
+
+	var configParts []configPartModel
+	diags.Append(c.Parts.ElementsAs(ctx, &configParts, false)...)
+	if diags.HasError() {
+		return diags
+	}
 
 	if c.Gzip.ValueBool() {
 		gzipWriter := gzip.NewWriter(&buffer)
-		err = renderPartsToWriter(ctx, c.Boundary.ValueString(), c.Parts, gzipWriter)
+
+		err = renderPartsToWriter(ctx, c.Boundary.ValueString(), configParts, gzipWriter)
 
 		gzipWriter.Close()
 	} else {
-		err = renderPartsToWriter(ctx, c.Boundary.ValueString(), c.Parts, &buffer)
+		err = renderPartsToWriter(ctx, c.Boundary.ValueString(), configParts, &buffer)
 	}
 
 	if err != nil {

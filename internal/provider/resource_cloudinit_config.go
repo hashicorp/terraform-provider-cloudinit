@@ -34,7 +34,7 @@ func (r *configResource) ValidateConfig(ctx context.Context, req resource.Valida
 		return
 	}
 
-	resp.Diagnostics.Append(cloudinitConfig.validate()...)
+	resp.Diagnostics.Append(cloudinitConfig.validate(ctx)...)
 }
 
 func (r *configResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
