@@ -259,3 +259,54 @@ func TestConfigResource_UpgradeFromVersion2_2_0(t *testing.T) {
 		})
 	}
 }
+
+// https://github.com/hashicorp/terraform-provider-cloudinit/issues/102
+func TestConfigResource_HandleUnknown(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		ResourceBlock string
+		Expected      string
+	}{
+		{
+			"issue 102 - handle unknown in validate caused by variable",
+			`
+			variable "config_types" {
+				default = ["text/cloud-config", "text/cloud-config"]
+			}
+			  
+			resource "cloudinit_config" "foo" {
+				gzip          = true
+				base64_encode = true
+				
+				dynamic "part" {
+				  for_each = var.config_types
+				  content {
+					content_type = part.value
+					content      = <<-EOT
+					#cloud-config
+					test: ${part.value}
+					EOT
+				  }
+				}
+			}
+			`,
+			"H4sIAAAAAAAA/3LOzytJzSvRDaksSLVSyC3NKcksSCwq0c/NrEhNsVZIyi/NS0ksqrRV8vX0dXXyD/VzcQyKVOIC8XTDUouKM/PzrBQM9Qx4uXi5dHWRFfFywc0uSswrTkst0nXNS85PycxLt1IwT8osQVIAtrwktaJEPzknvzRFNzk/Ly0znZfLNzM3FcMaZWQ1XCWpxSVY9A525+jq8nIBAgAA//821u5zfAEAAA==",
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.Name, func(t *testing.T) {
+			r.UnitTest(t, r.TestCase{
+				Steps: []r.TestStep{
+					{
+						ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+						Config:                   tt.ResourceBlock,
+						Check: r.ComposeTestCheckFunc(
+							r.TestCheckResourceAttr("cloudinit_config.foo", "rendered", tt.Expected),
+						),
+					},
+				},
+			})
+		})
+	}
+}
