@@ -9,7 +9,7 @@ on:
         required: true
 
 permissions:
-  contents: read # Write operations use service account PAT
+  contents: write # Needed for goreleaser to create GH release
 
 env:
   CI_COMMIT_AUTHOR: hc-github-team-tf-provider-devex
