@@ -1,9 +1,3 @@
-## 2.3.0 (February 22, 2023)
-
-NOTES:
-
-* provider: Rewritten to use the [`terraform-plugin-framework`](https://www.terraform.io/plugin/framework) ([#96](https://github.com/hashicorp/terraform-provider-cloudinit/issues/96))
-
 ## 2.2.0 (February 19, 2021)
 
 Binary releases of this provider will now include the darwin-arm64 platform. This version contains no further changes.
