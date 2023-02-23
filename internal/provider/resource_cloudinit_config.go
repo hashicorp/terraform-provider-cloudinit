@@ -59,9 +59,6 @@ func (r *configResource) Schema(ctx context.Context, req resource.SchemaRequest,
 							MarkdownDescription: "A MIME-style content type to report in the header for the part. Defaults to `text/plain`",
 						},
 						"content": schema.StringAttribute{
-							Validators: []validator.String{
-								stringvalidator.LengthAtLeast(1),
-							},
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.RequiresReplace(),
 							},

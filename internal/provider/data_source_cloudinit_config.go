@@ -49,9 +49,6 @@ func (d *configDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 							MarkdownDescription: "A MIME-style content type to report in the header for the part. Defaults to `text/plain`",
 						},
 						"content": schema.StringAttribute{
-							Validators: []validator.String{
-								stringvalidator.LengthAtLeast(1),
-							},
 							Required:            true,
 							MarkdownDescription: "Body content for the part.",
 						},
