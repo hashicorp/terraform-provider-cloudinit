@@ -1,3 +1,9 @@
+## 2.3.2 (February 23, 2023)
+
+BUG FIXES:
+
+* cloudinit_config: Remove length validation to allow empty content string in part blocks ([#105](https://github.com/hashicorp/terraform-provider-cloudinit/issues/105))
+
 ## 2.3.1 (February 22, 2023)
 
 BUG FIXES:
