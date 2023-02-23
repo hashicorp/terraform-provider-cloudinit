@@ -1,0 +1,6 @@
+kind: BUG FIXES
+body: 'cloudinit_config: Remove length validation to allow empty content string in
+  part blocks'
+time: 2023-02-23T15:19:30.197062-05:00
+custom:
+  Issue: "105"
