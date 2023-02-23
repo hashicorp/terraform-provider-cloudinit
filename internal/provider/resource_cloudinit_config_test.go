@@ -130,6 +130,42 @@ func TestConfigResourceRender(t *testing.T) {
 			}`,
 			"H4sIAAAAAAAA/2TNuwrCQBCF4X5h32FJP0YrIWLhJYVFFEQFy1xGM5DMhtkJJG8vWkjQ8sDP+XaeFVnhMnaYuLZvlLpcNG5pwGrlCt9zlcu4jrJDlm5P1+N+c75H5r3ghhLIc+IWs7k11gBMI2u+35JzeKBAyqWviJ+JWxakk+CDKw4aDxBqbJpQCnVqTUYt/jk1jlqj4K8IYM0rAAD//0u6BO3QAAAA",
 		},
+		// Initial fix of panic when part block wasn't parsable
+		// https://github.com/hashicorp/terraform/issues/13572
+		//
+		// Move to framework fixed parsing error, but introduced incorrect validation,  empty content is valid
+		// https://github.com/hashicorp/terraform-provider-cloudinit/issues/104
+		{
+			"empty content field in part block",
+			`resource "cloudinit_config" "foo" {
+				part {
+					content = ""
+				}
+			}`,
+			"H4sIAAAAAAAA/3LOzytJzSvRDaksSLVSyC3NKcksSCwq0c/NrEhNsVZIyi/NS0ksqrRV8vX0dXXyD/VzcQyKVOIC8XTDUouKM/PzrBQM9Qx4uXi5dHWRFfFywc0uSswrTkst0nXNS85PycxLt1IwT8osQVIAtrwktaJEvyAnMTOPl8s3MzcVw3x0G3R1ebkAAQAA///dakG4wAAAAA==",
+		},
+		{
+			"empty content field in one part block, multiple part blocks",
+			`resource "cloudinit_config" "foo" {
+				gzip = false
+				base64_encode = false
+
+				part {
+					content_type = "text/cloud-config"
+					content = "abc"
+				}
+
+				part {
+					content = ""
+				}
+
+				part {
+					content_type = "text/cloud-config"
+					content = ""
+				}
+			}`,
+			"Content-Type: multipart/mixed; boundary=\"MIMEBOUNDARY\"\nMIME-Version: 1.0\r\n\r\n--MIMEBOUNDARY\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/cloud-config\r\nMime-Version: 1.0\r\n\r\nabc\r\n--MIMEBOUNDARY\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/plain\r\nMime-Version: 1.0\r\n\r\n\r\n--MIMEBOUNDARY\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/cloud-config\r\nMime-Version: 1.0\r\n\r\n\r\n--MIMEBOUNDARY--\r\n",
+		},
 	}
 
 	for _, tt := range testCases {
@@ -149,22 +185,12 @@ func TestConfigResourceRender(t *testing.T) {
 	}
 }
 
-// https://github.com/hashicorp/terraform/issues/13572
 func TestConfigResourceRender_handleErrors(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		ResourceBlock string
 		ErrorMatch    *regexp.Regexp
 	}{
-		{
-			"empty content field in part block",
-			`resource "cloudinit_config" "foo" {
-				part {
-					content = ""
-				}
-			}`,
-			regexp.MustCompile("content string length must be at least 1"),
-		},
 		{
 			"base64 can't be false when gzip is true",
 			`resource "cloudinit_config" "foo" {
