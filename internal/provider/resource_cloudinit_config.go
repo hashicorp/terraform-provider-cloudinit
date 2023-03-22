@@ -7,13 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-provider-cloudinit/internal/provider/attribute_plan_modifier_bool"
-	"github.com/hashicorp/terraform-provider-cloudinit/internal/provider/attribute_plan_modifier_string"
 )
 
 var (
@@ -52,10 +51,10 @@ func (r *configResource) Schema(ctx context.Context, req resource.SchemaRequest,
 							},
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.RequiresReplace(),
-								attribute_plan_modifier_string.DefaultValue(types.StringValue("text/plain")),
 							},
 							Optional:            true,
 							Computed:            true,
+							Default:             stringdefault.StaticString("text/plain"),
 							MarkdownDescription: "A MIME-style content type to report in the header for the part. Defaults to `text/plain`",
 						},
 						"content": schema.StringAttribute{
@@ -90,19 +89,19 @@ func (r *configResource) Schema(ctx context.Context, req resource.SchemaRequest,
 			"gzip": schema.BoolAttribute{
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
-					attribute_plan_modifier_bool.DefaultValue(types.BoolValue(true)),
 				},
 				Optional:            true,
 				Computed:            true,
+				Default:             booldefault.StaticBool(true),
 				MarkdownDescription: "Specify whether or not to gzip the `rendered` output. Defaults to `true`.",
 			},
 			"base64_encode": schema.BoolAttribute{
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
-					attribute_plan_modifier_bool.DefaultValue(types.BoolValue(true)),
 				},
 				Optional:            true,
 				Computed:            true,
+				Default:             booldefault.StaticBool(true),
 				MarkdownDescription: "Specify whether or not to base64 encode the `rendered` output. Defaults to `true`, and cannot be disabled if gzip is `true`.",
 			},
 			"boundary": schema.StringAttribute{
@@ -111,10 +110,10 @@ func (r *configResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-					attribute_plan_modifier_string.DefaultValue(types.StringValue("MIMEBOUNDARY")),
 				},
 				Optional:            true,
 				Computed:            true,
+				Default:             stringdefault.StaticString("MIMEBOUNDARY"),
 				MarkdownDescription: "Specify the Writer's default boundary separator. Defaults to `MIMEBOUNDARY`.",
 			},
 			"rendered": schema.StringAttribute{
