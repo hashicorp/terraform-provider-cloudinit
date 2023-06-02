@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package main
 
 import (
@@ -6,6 +9,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+
 	"github.com/hashicorp/terraform-provider-cloudinit/internal/provider"
 )
 
