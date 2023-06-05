@@ -10,4 +10,4 @@ import (
 	_ "github.com/hashicorp/copywrite"
 )
 
-//go:generate go run github.com/hashicorp/copywrite headers -d .. --config ../.copywrite.hcl
+//go:generate go run github.com/hashicorp/copywrite headers -d ../.. --config ../../.copywrite.hcl
