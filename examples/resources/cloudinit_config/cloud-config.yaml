@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 #cloud-config
 # See documentation for more configuration examples
 # https://cloudinit.readthedocs.io/en/latest/reference/examples.html 

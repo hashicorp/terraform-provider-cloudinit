@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 resource "cloudinit_config" "foobar" {
   gzip          = false
   base64_encode = false
