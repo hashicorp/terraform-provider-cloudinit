@@ -13,9 +13,6 @@ import (
 	"github.com/hashicorp/terraform-provider-cloudinit/internal/provider"
 )
 
-// Generate the Terraform provider documentation using `tfplugindocs`:
-//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
-
 func main() {
 	var debug bool
 
