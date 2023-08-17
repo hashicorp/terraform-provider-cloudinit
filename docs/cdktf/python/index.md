@@ -11,4 +11,4 @@ description: |-
 The cloud-init Terraform provider exposes the `cloudinit_config` data source, previously available as the `template_cloudinit_config` resource [in the template provider](https://registry.terraform.io/providers/hashicorp/template/latest/docs/data-sources/cloudinit_config), which renders a [multipart MIME configuration](https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive) for use with [cloud-init](https://cloudinit.readthedocs.io/en/latest/).
 
 This provider requires no configuration. For information on the resources it provides, see the navigation bar.
-<!-- cache-key: cdktf-0.17.1 input-aae63f8c96e668c0c5c932046a90776e5df82d10207fb242b921f1adb4bf0764 -->
+<!-- cache-key: cdktf-0.18.0 input-aae63f8c96e668c0c5c932046a90776e5df82d10207fb242b921f1adb4bf0764 -->
