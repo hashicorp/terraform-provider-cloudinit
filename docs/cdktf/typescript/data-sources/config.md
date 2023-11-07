@@ -88,7 +88,7 @@ runcmd:
 ### Optional
 
 - `base64Encode` (Boolean) Specify whether or not to base64 encode the `rendered` output. Defaults to `true`, and cannot be disabled if gzip is `true`.
-- `boundary` (String) Specify the Writer's default boundary separator. Defaults to `mimeboundary`.
+- `boundary` (String) Specify the Writer's default boundary separator. Defaults to `MIMEBOUNDARY`.
 - `gzip` (Boolean) Specify whether or not to gzip the `rendered` output. Defaults to `true`.
 
 ### Read-Only
@@ -107,6 +107,6 @@ Optional:
 
 - `contentType` (String) A MIME-style content type to report in the header for the part. Defaults to `text/plain`
 - `filename` (String) A filename to report in the header for the part.
-- `mergeType` (String) A value for the `xMergeType` header of the part, to control [cloud-init merging behavior](https://cloudinit.readthedocs.io/en/latest/reference/merging.html).
+- `mergeType` (String) A value for the `X-Merge-Type` header of the part, to control [cloud-init merging behavior](https://cloudinit.readthedocs.io/en/latest/reference/merging.html).
 
-<!-- cache-key: cdktf-0.18.0 input-de8dbd952099888a814299e2a5f9aaba766de1e72b856d2ef1ef0eb87f23aea1 -->
+<!-- cache-key: cdktf-0.19.0 input-de8dbd952099888a814299e2a5f9aaba766de1e72b856d2ef1ef0eb87f23aea1 -->
