@@ -107,4 +107,4 @@ Optional:
 - `filename` (String) A filename to report in the header for the part.
 - `merge_type` (String) A value for the `X-Merge-Type` header of the part, to control [cloud-init merging behavior](https://cloudinit.readthedocs.io/en/latest/reference/merging.html).
 
-<!-- cache-key: cdktf-0.18.0 input-91dd002771e9be81d1d1202c44a6888affafc9c9f675f329613494df5277473f -->
+<!-- cache-key: cdktf-0.19.0 input-91dd002771e9be81d1d1202c44a6888affafc9c9f675f329613494df5277473f -->
