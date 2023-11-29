@@ -1,3 +1,9 @@
+## 2.3.3 (November 29, 2023)
+
+NOTES:
+
+* This release introduces no functional changes. It does however include dependency updates which address upstream CVEs. ([#186](https://github.com/hashicorp/terraform-provider-cloudinit/issues/186))
+
 ## 2.3.2 (February 23, 2023)
 
 BUG FIXES:
