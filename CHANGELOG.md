@@ -1,3 +1,9 @@
+## 2.3.4 (April 22, 2024)
+
+NOTES:
+
+* all: This release contains no functionality changes, only the inclusion of the LICENSE file in the release archives ([#228](https://github.com/hashicorp/terraform-provider-cloudinit/issues/228))
+
 ## 2.3.3 (November 29, 2023)
 
 NOTES:
