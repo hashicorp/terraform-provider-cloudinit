@@ -1,8 +1,6 @@
 module github.com/hashicorp/terraform-provider-cloudinit
 
-go 1.21
-
-toolchain go1.21.6
+go 1.22.7
 
 require (
 	github.com/hashicorp/terraform-plugin-framework v1.11.0
