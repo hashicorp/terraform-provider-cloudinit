@@ -100,7 +100,7 @@ The release process is automated via GitHub Actions, and it's defined in the Wor
 - Select the `Release` workflow on the left-hand menu. 
 - Click on the `Run workflow` button.
 - Select the branch to cut the release from (default is main).
-- Input the `Release version number` which is the Semantic Release number including the `v` prefix (i.e. `v1.4.0`) and click `Run workflow` to kickoff the release.
+- Input the `Release version number` which is the Semantic Release number including the `v` prefix (i.e. `v2.3.5`) and click `Run workflow` to kickoff the release.
 
 ## License
 
