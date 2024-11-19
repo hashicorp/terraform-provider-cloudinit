@@ -19,17 +19,21 @@ env:
 
 jobs:
   get-go-version:
+    # Inspired by envconsul -- https://github.com/hashicorp/envconsul/blob/bcb270fdc53e1273b3010d51c02fcf2e67d830d0/.github/workflows/build.yml#L18
     name: "Determine Go toolchain version"
     runs-on: ubuntu-latest
     outputs:
       go-version: ${{ steps.get-go-version.outputs.go-version }}
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # 5.1.0
+        with:
+          go-version-file: 'go.mod'
       - name: Determine Go version
         id: get-go-version
         run: |
-          echo "Building with Go $(go version)"
-          echo "go-version=$(go version)" >> "$GITHUB_OUTPUT"
+          echo "Building with Go $(go env GOVERSION | tr -d 'go')"
+          echo "go-version=$(go env GOVERSION | tr -d 'go')" >> "$GITHUB_OUTPUT"
 
   set-product-version:
     runs-on: ubuntu-latest
