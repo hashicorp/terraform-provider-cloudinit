@@ -3,7 +3,7 @@ page_title: "cloudinit_config Data Source - terraform-provider-cloudinit"
 description: |-
   Renders a multi-part MIME configuration https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive for use with cloud-init https://cloudinit.readthedocs.io/en/latest/.
   Cloud-init is a commonly-used startup configuration utility for cloud compute instances. It accepts configuration via provider-specific user data mechanisms, such as user_data for Amazon EC2 instances. Multi-part MIME is one of the data formats it accepts. For more information, see User-Data Formats https://cloudinit.readthedocs.io/en/latest/explanation/format.html in the cloud-init manual.
-  This is not a generalized utility for producing multi-part MIME messages. It's feature set is specialized for cloud-init multi-part MIME messages.
+  This is not a generalized utility for producing multi-part MIME messages. Its feature set is specialized for cloud-init multi-part MIME messages.
 ---
 
 
@@ -14,7 +14,7 @@ Renders a [multi-part MIME configuration](https://cloudinit.readthedocs.io/en/la
 
 Cloud-init is a commonly-used startup configuration utility for cloud compute instances. It accepts configuration via provider-specific user data mechanisms, such as `user_data` for Amazon EC2 instances. Multi-part MIME is one of the data formats it accepts. For more information, see [User-Data Formats](https://cloudinit.readthedocs.io/en/latest/explanation/format.html) in the cloud-init manual.
 
-This is not a generalized utility for producing multi-part MIME messages. It's feature set is specialized for cloud-init multi-part MIME messages.
+This is not a generalized utility for producing multi-part MIME messages. Its feature set is specialized for cloud-init multi-part MIME messages.
 
 ## Example Usage
 
@@ -104,4 +104,4 @@ Optional:
 - `filename` (String) A filename to report in the header for the part.
 - `merge_type` (String) A value for the `X-Merge-Type` header of the part, to control [cloud-init merging behavior](https://cloudinit.readthedocs.io/en/latest/reference/merging.html).
 
-<!-- cache-key: cdktf-0.20.8 input-de8dbd952099888a814299e2a5f9aaba766de1e72b856d2ef1ef0eb87f23aea1 -->
+<!-- cache-key: cdktf-0.20.8 input-e1d1d7e13ddc7d0ec032c2e2636bf781401603f65e568d2d04823501c5dc41cc -->
