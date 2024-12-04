@@ -8,7 +8,7 @@ project "terraform-provider-cloudinit" {
   team = "_UNUSED_"
 
   slack {
-    notification_channel = "C02M018DV27" // #feed-tf-devex
+    notification_channel = "C02BASDVCDT" // #feed-terraform-sdk
   }
 
   github {
