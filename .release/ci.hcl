@@ -14,7 +14,7 @@ project "terraform-provider-cloudinit" {
   github {
     organization     = "hashicorp"
     repository       = "terraform-provider-cloudinit"
-    release_branches = ["main"]
+    release_branches = ["main", "release/**"]
   }
 }
 
