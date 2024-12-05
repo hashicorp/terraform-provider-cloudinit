@@ -1,3 +1,9 @@
+## 2.3.6-alpha1 (December 05, 2024)
+
+NOTES:
+
+* all: This release contains no functionality changes. It is released using new build and release Actions. ([#293](https://github.com/hashicorp/terraform-provider-cloudinit/issues/293))
+
 ## 2.3.5 (September 10, 2024)
 
 NOTES:
