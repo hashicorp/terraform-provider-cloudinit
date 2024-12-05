@@ -8,13 +8,13 @@ project "terraform-provider-cloudinit" {
   team = "_UNUSED_"
 
   slack {
-    notification_channel = "C02M018DV27" // #feed-tf-devex
+    notification_channel = "C02BASDVCDT" // #feed-terraform-sdk
   }
 
   github {
     organization     = "hashicorp"
     repository       = "terraform-provider-cloudinit"
-    release_branches = ["main"]
+    release_branches = ["main", "release/**"]
   }
 }
 
@@ -42,5 +42,49 @@ event "prepare" {
 
   notification {
     on = "fail"
+  }
+}
+
+event "trigger-staging" {
+}
+
+event "promote-staging" {
+  action "promote-staging" {
+    organization = "hashicorp"
+    repository   = "crt-workflows-common"
+    workflow     = "promote-staging"
+    depends      = null
+    config       = "oss-release-metadata.hcl"
+  }
+
+  depends = ["trigger-staging"]
+
+  notification {
+    on = "always"
+  }
+
+  promotion-events {
+  }
+}
+
+event "trigger-production" {
+}
+
+event "promote-production" {
+  action "promote-production" {
+    organization = "hashicorp"
+    repository   = "crt-workflows-common"
+    workflow     = "promote-production"
+    depends      = null
+    config       = ""
+  }
+
+  depends = ["trigger-production"]
+
+  notification {
+    on = "always"
+  }
+
+  promotion-events {
   }
 }
