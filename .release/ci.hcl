@@ -18,6 +18,9 @@ project "terraform-provider-cloudinit" {
   }
 }
 
+event "merge {
+}
+
 event "build" {
   action "build" {
     depends = ["merge"]
