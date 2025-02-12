@@ -20,6 +20,8 @@ project "terraform-provider-cloudinit" {
 
 event "build" {
   action "build" {
+    depends = ["merge"]
+
     organization = "hashicorp"
     repository   = "terraform-provider-cloudinit"
     workflow     = "build"
@@ -62,9 +64,6 @@ event "promote-staging" {
   notification {
     on = "always"
   }
-
-  promotion-events {
-  }
 }
 
 event "trigger-production" {
@@ -83,8 +82,5 @@ event "promote-production" {
 
   notification {
     on = "always"
-  }
-
-  promotion-events {
   }
 }
