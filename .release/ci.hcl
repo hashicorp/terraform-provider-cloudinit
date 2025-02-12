@@ -18,7 +18,7 @@ project "terraform-provider-cloudinit" {
   }
 }
 
-event "merge {
+event "merge" {
 }
 
 event "build" {
