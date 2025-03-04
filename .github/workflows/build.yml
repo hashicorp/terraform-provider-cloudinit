@@ -65,9 +65,10 @@ jobs:
           name: metadata.json
           path: ${{ steps.generate-metadata-file.outputs.filepath }}
 
-  # $ unzip -l tmp/1/terraform-registry-manifest.json/terraform-registry-manifest.json.zip
-  # Archive:  tmp/1/terraform-registry-manifest.json/terraform-registry-manifest.json.zip
-  #   terraform-provider-cloudinit_2.3.6-alpha1.json
+  # This job uploads an Actions artifact named terraform-registry-manifest.json.zip.
+  # The artifact contains a single file with a filename that Terraform Registry expects
+  # (example: terraform-provider-cloudinit_2.3.6-alpha1.json) and contents identical
+  # to the terraform-registry-manifest.json file in the repository.
   upload-terraform-registry-manifest-file:
     needs: set-product-version
     runs-on: ubuntu-latest
