@@ -65,6 +65,29 @@ jobs:
           name: metadata.json
           path: ${{ steps.generate-metadata-file.outputs.filepath }}
 
+  # $ unzip -l tmp/1/terraform-registry-manifest.json/terraform-registry-manifest.json.zip
+  # Archive:  tmp/1/terraform-registry-manifest.json/terraform-registry-manifest.json.zip
+  #   terraform-provider-cloudinit_2.3.6-alpha1.json
+  upload-terraform-registry-manifest-file:
+    needs: set-product-version
+    runs-on: ubuntu-latest
+    outputs:
+      filepath: ${{ steps.terraform-registry-manifest.outputs.filename }}
+    steps:
+      - name: "Checkout directory"
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: ${{ env.PKG_NAME }}
+      - name: Build filename
+        id: terraform-registry-manifest
+        run: |
+          cp ${{ env.PKG_NAME }}/terraform-registry-manifest.json "${{ env.PKG_NAME }}_${{ needs.set-product-version.outputs.product-version }}.json"
+          echo "filename=${{ env.PKG_NAME }}_${{ needs.set-product-version.outputs.product-version }}.json" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: terraform-registry-manifest.json
+          path: ${{ steps.terraform-registry-manifest.outputs.filename }}
+
   build-other:
     needs:
       - get-go-version
