@@ -66,10 +66,10 @@ jobs:
           path: ${{ steps.generate-metadata-file.outputs.filepath }}
 
   # This job uploads an Actions artifact named terraform-registry-manifest.json.zip.
-  # The artifact contains a single file with a filename that Terraform Registry expects
-  # (example: terraform-provider-cloudinit_2.3.6-alpha1_manifest.json) and contents identical
-  # to the terraform-registry-manifest.json file in the repository.
-  upload-terraform-registry-manifest-file:
+  # The artifact contains a single file with a name that Terraform Registry expects
+  # (example: terraform-provider-cloudinit_2.3.6-alpha1_manifest.json) and with contents
+  # identical to the terraform-registry-manifest.json file in this GitHub repository.
+  upload-terraform-registry-manifest:
     needs: set-product-version
     runs-on: ubuntu-latest
     outputs:
@@ -79,7 +79,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: ${{ env.PKG_NAME }}
-      - name: Build filename
+      - name: Copy manifest from checkout directory to a file with the desired name
         id: terraform-registry-manifest
         run: |
           source="${{ env.PKG_NAME }}/terraform-registry-manifest.json"
