@@ -19,9 +19,9 @@ env:
   PKG_NAME: "terraform-provider-cloudinit"
 
 jobs:
+  # Determines the Go toolchain version to use for product builds.
+  # The implementation is inspired by envconsul -- https://go.hashi.co/get-go-version-example
   get-go-version:
-    # Determines the Go toolchain version to use for product builds.
-    # The implementation is inspired by envconsul -- https://go.hashi.co/get-go-version-example
     name: "Determine Go toolchain version"
     runs-on: ubuntu-latest
     outputs:
