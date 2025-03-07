@@ -100,8 +100,8 @@ jobs:
           name="${{ env.PKG_NAME }}"
           version="${{ needs.set-product-version.outputs.product-version }}"
 
-          source="${{ name }}/terraform-registry-manifest.json"
-          destination="${{ name }}_${{ version }}_manifest.json"
+          source="$name/terraform-registry-manifest.json"
+          destination="$name_$version_manifest.json"
 
           cp "$source" "$destination"
           echo "filename=$destination" >> "$GITHUB_OUTPUT"
@@ -219,11 +219,12 @@ jobs:
     runs-on: ubuntu-latest
     name: "What's next?"
     steps:
-      - run: |
-        github_dot_com="${{ github.server_url }}"
-        owner_with_name="${{ github.repository }}"
-        ref="${{ github.ref }}"
+      - name: "Write a helpful summary"
+        run: |
+          github_dot_com="${{ github.server_url }}"
+          owner_with_name="${{ github.repository }}"
+          ref="${{ github.ref }}"
 
-        echo "### What's next?" >> "$GITHUB_STEP_SUMMARY"
-        echo "[View the checks for this commit.]($github_dot_com/$owner_with_name/commits/$ref) Expect a check for the CRT `prepare` workflow to appear momentarily.
-" >> "$GITHUB_STEP_SUMMARY"
+          echo "### What's next?" >> "$GITHUB_STEP_SUMMARY"
+          echo "[View the checks for this commit.]($github_dot_com/$owner_with_name/commits/$ref) Expect a check for the CRT `prepare` workflow to appear momentarily.
+          " >> "$GITHUB_STEP_SUMMARY"
