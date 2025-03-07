@@ -94,7 +94,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: ${{ env.PKG_NAME }}
-      - name: Build filename
+      - name: "Copy manifest from checkout directory to a file with the desired name"
         id: terraform-registry-manifest
         run: |
           name="${{ env.PKG_NAME }}"
