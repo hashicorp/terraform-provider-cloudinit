@@ -1,3 +1,7 @@
+# This workflow builds the product for all supported platforms and uploads the resulting
+# binaries as Actions artifacts. The workflow also uploads a build metadata file
+# (metadata.json)-- and a Terraform Registry manifest file (terraform-registry-manifest.json).
+
 name: build
 
 # We default to running this workflow on every push to every branch.
@@ -30,8 +34,11 @@ jobs:
       - name: Determine Go version
         id: get-go-version
         run: |
-          echo "Building with Go $(go env GOVERSION | tr -d 'go')" | tee "$GITHUB_STEP_SUMMARY"
-          echo "go-version=$(go env GOVERSION | tr -d 'go')" >> "$GITHUB_OUTPUT"
+          version="$(go env GOVERSION | tr -d 'go')"
+          echo "go-version=$version" >> "$GITHUB_OUTPUT"
+
+          echo "### Go version" >> "$GITHUB_STEP_SUMMARY"
+          echo "$version" >> "$GITHUB_STEP_SUMMARY"
 
   # Parses the version/VERSION file. Reference: https://github.com/hashicorp/actions-set-product-version/blob/main/README.md
   # > This action should be implemented in product repo `build.yml` files. The action is intended to grab the version
@@ -73,10 +80,11 @@ jobs:
           path: ${{ steps.generate-metadata-file.outputs.filepath }}
 
   # Uploads an Actions artifact named terraform-registry-manifest.json.zip.
+  #
   # The artifact contains a single file with a filename that Terraform Registry expects
-  # (example: terraform-provider-cloudinit_2.3.6-alpha1_manifest.json) and contents identical
-  # to the terraform-registry-manifest.json file in the repository.
-  upload-terraform-registry-manifest-file:
+  # (example: terraform-provider-cloudinit_2.3.6-alpha1_manifest.json). The file contents
+  # are identical to the terraform-registry-manifest.json file in the source repository.
+  upload-terraform-registry-manifest-artifact:
     needs: set-product-version
     runs-on: ubuntu-latest
     outputs:
@@ -89,16 +97,30 @@ jobs:
       - name: Build filename
         id: terraform-registry-manifest
         run: |
-          source="${{ env.PKG_NAME }}/terraform-registry-manifest.json"
-          destination="${{ env.PKG_NAME }}_${{ needs.set-product-version.outputs.product-version }}_manifest.json"
+          name="${{ env.PKG_NAME }}"
+          version="${{ needs.set-product-version.outputs.product-version }}"
+
+          source="${{ name }}/terraform-registry-manifest.json"
+          destination="${{ name }}_${{ version }}_manifest.json"
+
           cp "$source" "$destination"
           echo "filename=$destination" >> "$GITHUB_OUTPUT"
+
+          echo "### Terraform Registry manifest" >> "$GITHUB_STEP_SUMMARY"
+          echo "```json" >> "$GITHUB_STEP_SUMMARY"
+          cat "$source" >> "$GITHUB_STEP_SUMMARY"
+          echo "```" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: terraform-registry-manifest.json
           path: ${{ steps.terraform-registry-manifest.outputs.filename }}
 
   # Builds the product for all platforms except macOS.
+  #
+  # With `reproducible: report`, this job also reports whether the build is reproducible,
+  # but does not enforce it.
+  #
+  # Reference: https://github.com/hashicorp/actions-go-build/blob/main/README.md
   build:
     needs:
       - get-go-version
@@ -144,6 +166,11 @@ jobs:
 
   # Builds the product for macOS. This job is separate from the other build jobs because
   # macOS builds are only supported on macOS runners.
+  #
+  # With `reproducible: report`, this job also reports whether the build is reproducible,
+  # but does not enforce it.
+  #
+  # Reference: https://github.com/hashicorp/actions-go-build/blob/main/README.md
   build-darwin:
     needs:
       - get-go-version
@@ -184,3 +211,19 @@ jobs:
               -ldflags "-s -w -X 'main.Version=${{ needs.set-product-version.outputs.product-version }}'"
             cp LICENSE "$TARGET_DIR/LICENSE.txt"
 
+  whats-next:
+    needs:
+      - build
+      - build-darwin
+      - upload-terraform-registry-manifest-artifact
+    runs-on: ubuntu-latest
+    name: "What's next?"
+    steps:
+      - run: |
+        github_dot_com="${{ github.server_url }}"
+        owner_with_name="${{ github.repository }}"
+        ref="${{ github.ref }}"
+
+        echo "### What's next?" >> "$GITHUB_STEP_SUMMARY"
+        echo "[View the checks for this commit.]($github_dot_com/$owner_with_name/commits/$ref) Expect a check for the CRT `prepare` workflow to appear momentarily.
+" >> "$GITHUB_STEP_SUMMARY"
