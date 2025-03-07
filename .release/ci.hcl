@@ -1,4 +1,8 @@
 # Reference: https://github.com/hashicorp/crt-core-helloworld/blob/main/.release/ci.hcl (private repository)
+#
+# One way to validate, with a local build of the orchestrator (an internal repo):
+#
+# $ GITHUB_TOKEN="not-used" orchestrator parse config -use-v2 -local-config=.release/ci.hcl
 
 schema = "2"
 
@@ -63,6 +67,18 @@ event "promote-staging" {
   }
 
   depends = ["trigger-staging"]
+
+  promotion-events {
+
+    // Download Registry manifest from Artifactory staging repo
+    // and upload to staging Releases bucket
+    post-promotion {
+      organization = "hashicorp"
+      repository   = "action-upload-terraform-registry-manifest"
+      workflow     = "upload.yml"
+    }
+
+  }
 
   notification {
     on = "always"
