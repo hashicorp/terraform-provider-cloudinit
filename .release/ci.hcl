@@ -72,7 +72,7 @@ event "promote-staging" {
 
     // Download Registry manifest from Artifactory staging repo
     // and upload to staging Releases bucket
-    pre-promotion {
+    post-promotion {
       organization = "hashicorp"
       repository   = "action-upload-terraform-registry-manifest"
       workflow     = "upload.yml"
