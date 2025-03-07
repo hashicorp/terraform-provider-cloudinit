@@ -1,3 +1,15 @@
+## 2.3.7-alpha1 (March 04, 2025)
+
+NOTES:
+
+* all: This release is being used to test new build and release actions.
+
+## 2.3.6 (February 27, 2025)
+
+NOTES:
+
+* all: This release contains no functionality changes. It is being used to fix release metadata in the registry from the previous alpha1 release. ([#318](https://github.com/hashicorp/terraform-provider-cloudinit/issues/318))
+
 ## 2.3.6-alpha1 (December 05, 2024)
 
 NOTES:
