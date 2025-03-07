@@ -1,6 +1,6 @@
 # This workflow builds the product for all supported platforms and uploads the resulting
 # binaries as Actions artifacts. The workflow also uploads a build metadata file
-# (metadata.json)-- and a Terraform Registry manifest file (terraform-registry-manifest.json).
+# (metadata.json) -- and a Terraform Registry manifest file (terraform-registry-manifest.json).
 #
 # To validate basic correctness locally, use [nektos/act](https://nektosact.com/) in dry run mode:
 # $ act --dryrun --workflows .github/workflows/build.yml
