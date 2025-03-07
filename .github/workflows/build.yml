@@ -1,6 +1,13 @@
+# This workflow builds the product for all supported platforms and uploads the resulting
+# binaries as Actions artifacts. The workflow also uploads a build metadata file
+# (metadata.json) -- and a Terraform Registry manifest file (terraform-registry-manifest.json).
+#
+# To validate basic correctness locally, use [nektos/act](https://nektosact.com/) in dry run mode:
+# $ act --dryrun --workflows .github/workflows/build.yml
+
 name: build
 
-# We now default to running this workflow on every push to every branch.
+# We default to running this workflow on every push to every branch.
 # This provides fast feedback when build issues occur, so they can be
 # fixed prior to being merged to the main branch.
 #
@@ -15,8 +22,9 @@ env:
   PKG_NAME: "terraform-provider-cloudinit"
 
 jobs:
+  # Determines the Go toolchain version to use for product builds.
+  # The implementation is inspired by envconsul -- https://go.hashi.co/get-go-version-example
   get-go-version:
-    # Inspired by envconsul -- https://github.com/hashicorp/envconsul/blob/bcb270fdc53e1273b3010d51c02fcf2e67d830d0/.github/workflows/build.yml#L18
     name: "Determine Go toolchain version"
     runs-on: ubuntu-latest
     outputs:
@@ -29,9 +37,16 @@ jobs:
       - name: Determine Go version
         id: get-go-version
         run: |
-          echo "Building with Go $(go env GOVERSION | tr -d 'go')"
-          echo "go-version=$(go env GOVERSION | tr -d 'go')" >> "$GITHUB_OUTPUT"
+          version="$(go env GOVERSION | tr -d 'go')"
+          echo "go-version=$version" >> "$GITHUB_OUTPUT"
 
+          echo "### Go version" >> "$GITHUB_STEP_SUMMARY"
+          echo "$version" >> "$GITHUB_STEP_SUMMARY"
+
+  # Parses the version/VERSION file. Reference: https://github.com/hashicorp/actions-set-product-version/blob/main/README.md
+  # > This action should be implemented in product repo `build.yml` files. The action is intended to grab the version
+  # > from the version file at the beginning of the build, then passes those versions (along with metadata, where
+  # > necessary) to any workflow jobs that need version information.
   set-product-version:
     runs-on: ubuntu-latest
     outputs:
@@ -45,6 +60,8 @@ jobs:
         id: set-product-version
         uses: hashicorp/actions-set-product-version@v2
 
+  # Creates metadata.json file containing build metadata for consumption by CRT workflows.
+  # Reference: https://github.com/hashicorp/actions-generate-metadata/blob/main/README.md
   generate-metadata-file:
     needs: set-product-version
     runs-on: ubuntu-latest
@@ -65,11 +82,12 @@ jobs:
           name: metadata.json
           path: ${{ steps.generate-metadata-file.outputs.filepath }}
 
-  # This job uploads an Actions artifact named terraform-registry-manifest.json.zip.
+  # Uploads an Actions artifact named terraform-registry-manifest.json.zip.
+  #
   # The artifact contains a single file with a filename that Terraform Registry expects
-  # (example: terraform-provider-cloudinit_2.3.6-alpha1_manifest.json) and contents identical
-  # to the terraform-registry-manifest.json file in the repository.
-  upload-terraform-registry-manifest-file:
+  # (example: terraform-provider-cloudinit_2.3.6-alpha1_manifest.json). The file contents
+  # are identical to the terraform-registry-manifest.json file in the source repository.
+  upload-terraform-registry-manifest-artifact:
     needs: set-product-version
     runs-on: ubuntu-latest
     outputs:
@@ -79,19 +97,34 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: ${{ env.PKG_NAME }}
-      - name: Build filename
+      - name: "Copy manifest from checkout directory to a file with the desired name"
         id: terraform-registry-manifest
         run: |
-          source="${{ env.PKG_NAME }}/terraform-registry-manifest.json"
-          destination="${{ env.PKG_NAME }}_${{ needs.set-product-version.outputs.product-version }}_manifest.json"
+          name="${{ env.PKG_NAME }}"
+          version="${{ needs.set-product-version.outputs.product-version }}"
+
+          source="$name/terraform-registry-manifest.json"
+          destination="$name_$version_manifest.json"
+
           cp "$source" "$destination"
           echo "filename=$destination" >> "$GITHUB_OUTPUT"
+
+          echo "### Terraform Registry manifest" >> "$GITHUB_STEP_SUMMARY"
+          echo "```json" >> "$GITHUB_STEP_SUMMARY"
+          cat "$source" >> "$GITHUB_STEP_SUMMARY"
+          echo "```" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: terraform-registry-manifest.json
           path: ${{ steps.terraform-registry-manifest.outputs.filename }}
 
-  build-other:
+  # Builds the product for all platforms except macOS.
+  #
+  # With `reproducible: report`, this job also reports whether the build is reproducible,
+  # but does not enforce it.
+  #
+  # Reference: https://github.com/hashicorp/actions-go-build/blob/main/README.md
+  build:
     needs:
       - get-go-version
       - set-product-version
@@ -134,6 +167,13 @@ jobs:
               -ldflags "-s -w -X 'main.Version=${{ needs.set-product-version.outputs.product-version }}'"
             cp LICENSE "$TARGET_DIR/LICENSE.txt"
 
+  # Builds the product for macOS. This job is separate from the other build jobs because
+  # macOS builds are only supported on macOS runners.
+  #
+  # With `reproducible: report`, this job also reports whether the build is reproducible,
+  # but does not enforce it.
+  #
+  # Reference: https://github.com/hashicorp/actions-go-build/blob/main/README.md
   build-darwin:
     needs:
       - get-go-version
@@ -157,6 +197,8 @@ jobs:
           PRERELEASE_VERSION: ${{ needs.set-product-version.outputs.product-prerelease-version}}
           METADATA_VERSION: ${{ env.METADATA }}
         with:
+          # See .goreleaser.yml for your product's current binary name. Protocol v5 providers
+          # often use the _x5 suffix for historical reasons. Protovol v6 providers should not suffix.
           bin_name: "${{ env.PKG_NAME }}_v${{ needs.set-product-version.outputs.product-version }}_x5"
           product_name: ${{ env.PKG_NAME }}
           product_version: ${{ needs.set-product-version.outputs.product-version }}
@@ -172,3 +214,20 @@ jobs:
               -ldflags "-s -w -X 'main.Version=${{ needs.set-product-version.outputs.product-version }}'"
             cp LICENSE "$TARGET_DIR/LICENSE.txt"
 
+  whats-next:
+    needs:
+      - build
+      - build-darwin
+      - upload-terraform-registry-manifest-artifact
+    runs-on: ubuntu-latest
+    name: "What's next?"
+    steps:
+      - name: "Write a helpful summary"
+        run: |
+          github_dot_com="${{ github.server_url }}"
+          owner_with_name="${{ github.repository }}"
+          ref="${{ github.ref }}"
+
+          echo "### What's next?" >> "$GITHUB_STEP_SUMMARY"
+          echo "[View the checks for this commit.]($github_dot_com/$owner_with_name/commits/$ref) Expect a check for the CRT `prepare` workflow to appear momentarily.
+          " >> "$GITHUB_STEP_SUMMARY"
