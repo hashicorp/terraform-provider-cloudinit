@@ -75,7 +75,7 @@ event "promote-staging" {
     post-promotion {
       organization = "hashicorp"
       repository   = "action-upload-terraform-registry-manifest"
-      workflow     = "upload.yml"
+      workflow     = "upload"
     }
 
   }
