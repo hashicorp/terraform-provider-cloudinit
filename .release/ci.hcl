@@ -68,18 +68,6 @@ event "promote-staging" {
 
   depends = ["trigger-staging"]
 
-  promotion-events {
-
-    // Download Registry manifest from Artifactory staging repo
-    // and upload to staging Releases bucket
-    post-promotion {
-      organization = "hashicorp"
-      repository   = "action-upload-terraform-registry-manifest"
-      workflow     = "upload"
-    }
-
-  }
-
   notification {
     on = "always"
   }

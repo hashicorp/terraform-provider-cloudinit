@@ -2,47 +2,25 @@
 # binaries as Actions artifacts. The workflow also uploads a build metadata file
 # (metadata.json) -- and a Terraform Registry manifest file (terraform-registry-manifest.json).
 #
-# To validate basic correctness locally, use [nektos/act](https://nektosact.com/) in dry run mode:
-#
-# $ act --dryrun --workflows .github/workflows/build.yml
-#
-# To run the workflow locally (requires some patience -- jobs can hang without explanation):
-#
-# $ act 'workflow_dispatch' \
-#     --artifact-server-path tmp \
-#     --container-architecture linux/amd64 \
-#     --platform linux=ghcr.io/catthehacker/ubuntu:full-22.04 \
-#     --matrix goos:linux --matrix goarch:amd64 \
-#     -W .github/workflows/build.yml
-#
-# Useful `act` options:
-#
-#     --secret GITHUB_TOKEN=$(gh auth token)
-#     --secret ACTIONS_STEP_DEBUG=true
-#     --action-cache-path tmp/actions/cache
-#     --artifact-server-path tmp/actions/artifacts
+# Reference: https://github.com/hashicorp/terraform-provider-crt-example/blob/main/.github/workflows/README.md
 
 name: build
 
 # We default to running this workflow on every push to every branch.
 # This provides fast feedback when build issues occur, so they can be
 # fixed prior to being merged to the main branch.
-#
-# If you want to opt out of this, and only run the build on certain branches
-# please refer to the documentation on branch filtering here:
-#
-#   https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onpushbranchestagsbranches-ignoretags-ignore
-#
+
 on: [workflow_dispatch, push]
 
 env:
   PKG_NAME: "terraform-provider-cloudinit"
 
 jobs:
-  # Determines the Go toolchain version to use for product builds.
+  # Detects the Go toolchain version to use for product builds.
+  #
   # The implementation is inspired by envconsul -- https://go.hashi.co/get-go-version-example
   get-go-version:
-    name: "Determine Go toolchain version"
+    name: "Detect Go toolchain version"
     runs-on: ubuntu-latest
     outputs:
       go-version: ${{ steps.get-go-version.outputs.go-version }}
@@ -51,20 +29,19 @@ jobs:
       - uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
         with:
           go-version-file: 'go.mod'
-      - name: Determine Go version
+      - name: Detect Go version
         id: get-go-version
         run: |
-          version="$(go env GOVERSION | tr -d 'go')"
+          version="$(go list -f {{.GoVersion}} -m)"
           echo "go-version=$version" >> "$GITHUB_OUTPUT"
 
-          echo "### Go version" >> "$GITHUB_STEP_SUMMARY"
-          echo "$version" >> "$GITHUB_STEP_SUMMARY"
-
   # Parses the version/VERSION file. Reference: https://github.com/hashicorp/actions-set-product-version/blob/main/README.md
+  #
   # > This action should be implemented in product repo `build.yml` files. The action is intended to grab the version
   # > from the version file at the beginning of the build, then passes those versions (along with metadata, where
   # > necessary) to any workflow jobs that need version information.
   set-product-version:
+    name: "Parse version file"
     runs-on: ubuntu-latest
     outputs:
       product-version: ${{ steps.set-product-version.outputs.product-version }}
@@ -73,11 +50,12 @@ jobs:
       product-minor-version: ${{ steps.set-product-version.outputs.minor-product-version }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Set Product version
+      - name: Set variables
         id: set-product-version
         uses: hashicorp/actions-set-product-version@v2
 
   # Creates metadata.json file containing build metadata for consumption by CRT workflows.
+  #
   # Reference: https://github.com/hashicorp/actions-generate-metadata/blob/main/README.md
   generate-metadata-file:
     needs: set-product-version
@@ -123,12 +101,6 @@ jobs:
 
           cp "$source" "$destination"
           echo "filename=$destination" >> "$GITHUB_OUTPUT"
-
-          echo "### Terraform Registry manifest" >> "$GITHUB_STEP_SUMMARY"
-          echo '```json' >> "$GITHUB_STEP_SUMMARY"
-          cat "$source" >> "$GITHUB_STEP_SUMMARY"
-          echo >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: terraform-registry-manifest.json
@@ -147,9 +119,9 @@ jobs:
       - set-product-version
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false # recommended during development
+      fail-fast: true
       matrix:
-        goos: [freebsd, windows, linux]
+        goos: [freebsd, windows, linux, darwin]
         goarch: ["386", "amd64", "arm", "arm64"]
         exclude:
           - goos: freebsd
@@ -157,6 +129,10 @@ jobs:
           - goos: windows
             goarch: arm64
           - goos: windows
+            goarch: arm
+          - goos: darwin
+            goarch: 386
+          - goos: darwin
             goarch: arm
 
     name: Go ${{ needs.get-go-version.outputs.go-version }} ${{ matrix.goos }} ${{ matrix.goarch }} build
@@ -181,60 +157,13 @@ jobs:
               -o "$BIN_PATH" \
               -trimpath \
               -buildvcs=false \
-              -ldflags "-s -w -X 'main.Version=${{ needs.set-product-version.outputs.product-version }}'"
-            cp LICENSE "$TARGET_DIR/LICENSE.txt"
-
-  # Builds the product for macOS. This job is separate from the other build jobs because
-  # macOS builds are only supported on macOS runners.
-  #
-  # With `reproducible: report`, this job also reports whether the build is reproducible,
-  # but does not enforce it.
-  #
-  # Reference: https://github.com/hashicorp/actions-go-build/blob/main/README.md
-  build-darwin:
-    needs:
-      - get-go-version
-      - set-product-version
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        goos: [darwin]
-        goarch: ["amd64", "arm64"]
-      fail-fast: true
-    name: Go ${{ needs.get-go-version.outputs.go-version }} ${{ matrix.goos }} ${{ matrix.goarch }} build
-    env:
-      GOOS: ${{ matrix.goos }}
-      GOARCH: ${{ matrix.goarch }}
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: hashicorp/actions-go-build@v1
-        env:
-          CGO_ENABLED: 0
-          BASE_VERSION: ${{ needs.set-product-version.outputs.product-base-version }}
-          PRERELEASE_VERSION: ${{ needs.set-product-version.outputs.product-prerelease-version}}
-          METADATA_VERSION: ${{ env.METADATA }}
-        with:
-          # See .goreleaser.yml for your product's current binary name. Protocol v5 providers
-          # often use the _x5 suffix for historical reasons. Protovol v6 providers should not suffix.
-          bin_name: "${{ env.PKG_NAME }}_v${{ needs.set-product-version.outputs.product-version }}_x5"
-          product_name: ${{ env.PKG_NAME }}
-          product_version: ${{ needs.set-product-version.outputs.product-version }}
-          go_version: ${{ needs.get-go-version.outputs.go-version }}
-          os: ${{ matrix.goos }}
-          arch: ${{ matrix.goarch }}
-          reproducible: report
-          instructions: |
-            go build \
-              -o "$BIN_PATH" \
-              -trimpath \
-              -buildvcs=false \
-              -ldflags "-s -w -X 'main.Version=${{ needs.set-product-version.outputs.product-version }}'"
+              -ldflags "-s -w"
             cp LICENSE "$TARGET_DIR/LICENSE.txt"
 
   whats-next:
     needs:
       - build
-      - build-darwin
+      - generate-metadata-file
       - upload-terraform-registry-manifest-artifact
     runs-on: ubuntu-latest
     name: "What's next?"
@@ -246,5 +175,6 @@ jobs:
           ref="${{ github.ref }}"
 
           echo "### What's next?" >> "$GITHUB_STEP_SUMMARY"
-          echo "[View the checks for this commit.]($github_dot_com/$owner_with_name/commits/$ref) Expect a check for the CRT `prepare` workflow to appear momentarily.
-          " >> "$GITHUB_STEP_SUMMARY"
+          echo "#### For a release branch (see \`.release/ci.hcl\`)" >> $GITHUB_STEP_SUMMARY
+          echo "After this \`build\` workflow run completes succesfully, you can expect the CRT \`prepare\` workflow to begin momentarily." >> "$GITHUB_STEP_SUMMARY"
+          echo "To find the \`prepare\` workflow run, [view the checks for this commit]($github_dot_com/$owner_with_name/commits/$ref)" >> "$GITHUB_STEP_SUMMARY"
