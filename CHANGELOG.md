@@ -1,3 +1,9 @@
+## 2.3.7 (April 21, 2025)
+
+NOTES:
+
+* Update dependencies ([#339](https://github.com/hashicorp/terraform-provider-cloudinit/issues/339))
+
 ## 2.3.7-alpha1 (March 04, 2025)
 
 NOTES:
