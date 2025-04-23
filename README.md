@@ -93,14 +93,13 @@ $ act pull_request
 
 ## Releasing
 
-The release process is automated via GitHub Actions, and it's defined in the Workflow
-[release.yml](./.github/workflows/release.yml). To cut a release:
+The releasable builds are generated from the [build GH workflow](./.github/workflows/build.yml) and the release/promotion process
+is completed via internal HashiCorp deployment tooling. Prior to release, the changelog should be updated in `main` with
+the changie tool, example:
 
-- Go to the repository in Github and click on the `Actions` tab.
-- Select the `Release` workflow on the left-hand menu. 
-- Click on the `Run workflow` button.
-- Select the branch to cut the release from (default is main).
-- Input the `Release version number` which is the Semantic Release number including the `v` prefix (i.e. `v1.4.0`) and click `Run workflow` to kickoff the release.
+```sh
+changie batch 2.3.7 && changie merge
+```
 
 ## License
 
