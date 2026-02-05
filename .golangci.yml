@@ -1,12 +1,17 @@
-version: "2"
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
 linters:
-  default: none
+  disable-all: true
   enable:
     - copyloopvar
     - durationcheck
     - errcheck
     - forcetypeassert
     - godot
+    - gofmt
+    - gosimple
     - govet
     - ineffassign
     - makezero
@@ -18,32 +23,7 @@ linters:
     - unparam
     - unused
     - usetesting
-  exclusions:
-    generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
-  settings:
-    staticcheck:
-      checks:
-        - all
-        - '-QF1012' # "Use fmt.Fprintf(...) instead of Write" -- https://staticcheck.io/docs/checks#QF1012
 
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-formatters:
-  enable:
-    - gofmt
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+run:
+  # Prevent false positive timeouts in CI
+  timeout: 5m
