@@ -30,6 +30,19 @@ func TestConfigDataSourceRender(t *testing.T) {
 			"Content-Type: multipart/mixed; boundary=\"MIMEBOUNDARY\"\nMIME-Version: 1.0\r\n\r\n--MIMEBOUNDARY\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/x-shellscript\r\nMime-Version: 1.0\r\n\r\nbaz\r\n--MIMEBOUNDARY--\r\n",
 		},
 		{
+			"no gzip or b64 - non-ASCII content",
+			`data "cloudinit_config" "foo" {
+				gzip = false
+				base64_encode = false
+
+				part {
+					content_type = "text/cloud-config"
+					content = "¡Hola mundo!"
+				}
+			}`,
+			"Content-Type: multipart/mixed; boundary=\"MIMEBOUNDARY\"\nMIME-Version: 1.0\r\n\r\n--MIMEBOUNDARY\r\nContent-Transfer-Encoding: base64\r\nContent-Type: text/cloud-config\r\nMime-Version: 1.0\r\n\r\nwqFIb2xhIG11bmRvIQ==\r\n--MIMEBOUNDARY--\r\n",
+		},
+		{
 			"no gzip or b64 - basic content - default to text plain",
 			`data "cloudinit_config" "foo" {
 				gzip = false
