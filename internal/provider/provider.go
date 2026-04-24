@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -50,6 +51,14 @@ func (p *cloudinitProvider) DataSources(ctx context.Context) []func() datasource
 	return []func() datasource.DataSource{
 		func() datasource.DataSource {
 			return &configDataSource{}
+		},
+	}
+}
+
+func (p *cloudinitProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
+	return []func() ephemeral.EphemeralResource{
+		func() ephemeral.EphemeralResource {
+			return &configEphemeralResource{}
 		},
 	}
 }
