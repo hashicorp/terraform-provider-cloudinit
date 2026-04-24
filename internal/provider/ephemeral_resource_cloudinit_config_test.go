@@ -74,4 +74,3 @@ func TestConfigEphemeralResourceRender_handleErrors(t *testing.T) {
 	}
 }
 
-// Made with Bob
