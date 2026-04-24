@@ -1,12 +1,18 @@
 ---
-page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+page_title: "cloudinit_config Ephemeral Resource - terraform-provider-cloudinit"
 description: |-
-{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+  Renders a multi-part MIME configuration https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive for use with cloud-init https://cloudinit.readthedocs.io/en/latest/.
+  Cloud-init is a commonly-used startup configuration utility for cloud compute instances. It accepts configuration via provider-specific user data mechanisms, such as user_data for Amazon EC2 instances. Multi-part MIME is one of the data formats it accepts. For more information, see User-Data Formats https://cloudinit.readthedocs.io/en/latest/explanation/format.html in the cloud-init manual.
+  This is not a generalized utility for producing multi-part MIME messages. Its feature set is specialized for cloud-init multi-part MIME messages.
 ---
 
-# {{.Name}} ({{.Type}})
+# cloudinit_config (Ephemeral Resource)
 
-{{ .Description }}
+Renders a [multi-part MIME configuration](https://cloudinit.readthedocs.io/en/latest/explanation/format.html#mime-multi-part-archive) for use with [cloud-init](https://cloudinit.readthedocs.io/en/latest/).
+
+Cloud-init is a commonly-used startup configuration utility for cloud compute instances. It accepts configuration via provider-specific user data mechanisms, such as `user_data` for Amazon EC2 instances. Multi-part MIME is one of the data formats it accepts. For more information, see [User-Data Formats](https://cloudinit.readthedocs.io/en/latest/explanation/format.html) in the cloud-init manual.
+
+This is not a generalized utility for producing multi-part MIME messages. Its feature set is specialized for cloud-init multi-part MIME messages.
 
 **This ephemeral resource supports ephemeral values** (such as secrets from Vault KV v2) in the `content` attribute, allowing secrets to be injected directly into cloud-init templates **without storing them in Terraform state**. This enables fully declarative, secret-safe cloud-init generation entirely within Terraform.
 
@@ -17,13 +23,51 @@ description: |-
 ### Basic Usage
 
 #### Config
-{{ tffile "examples/ephemeral-resources/cloudinit_config/ephemeral-resource.tf" }}
+```terraform
+ephemeral "cloudinit_config" "foobar" {
+  gzip          = false
+  base64_encode = false
+
+  part {
+    filename     = "hello-script.sh"
+    content_type = "text/x-shellscript"
+
+    content = file("${path.module}/hello-script.sh")
+  }
+
+  part {
+    filename     = "cloud-config.yaml"
+    content_type = "text/cloud-config"
+
+    content = file("${path.module}/cloud-config.yaml")
+  }
+}
+```
 
 #### hello-script.sh
-{{ codefile "shell" "examples/ephemeral-resources/cloudinit_config/hello-script.sh" }}
+```shell
+#!/bin/sh
+echo "Hello World! I'm starting up now at $(date -R)!"
+```
 
 #### cloud-config.yaml
-{{ codefile "yaml" "examples/ephemeral-resources/cloudinit_config/cloud-config.yaml" }}
+```yaml
+#cloud-config
+# See documentation for more configuration examples
+# https://cloudinit.readthedocs.io/en/latest/reference/examples.html 
+
+# Install arbitrary packages
+# https://cloudinit.readthedocs.io/en/latest/reference/examples.html#install-arbitrary-packages
+packages:
+  - python
+# Run commands on first boot
+# https://cloudinit.readthedocs.io/en/latest/reference/examples.html#run-commands-on-first-boot
+runcmd:
+ - [ ls, -l, / ]
+ - [ sh, -xc, "echo $(date) ': hello world!'" ]
+ - [ sh, -c, echo "=========hello world=========" ]
+ - ls -l /root
+```
 
 ### Usage with AWS Instance
 
