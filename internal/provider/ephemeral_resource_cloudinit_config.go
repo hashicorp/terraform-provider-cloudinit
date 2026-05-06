@@ -118,4 +118,3 @@ func (r *configEphemeralResource) Open(ctx context.Context, req ephemeral.OpenRe
 	resp.Diagnostics.Append(cloudinitConfig.update(ctx)...)
 	resp.Diagnostics.Append(resp.Result.Set(ctx, cloudinitConfig)...)
 }
-

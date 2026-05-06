@@ -73,4 +73,3 @@ func TestConfigEphemeralResourceRender_handleErrors(t *testing.T) {
 		})
 	}
 }
-
