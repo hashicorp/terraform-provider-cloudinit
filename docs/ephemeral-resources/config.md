@@ -16,7 +16,7 @@ This is not a generalized utility for producing multi-part MIME messages. Its fe
 
 **This ephemeral resource supports ephemeral values** (such as secrets from Vault KV v2) in the `content` attribute, allowing secrets to be injected directly into cloud-init templates **without storing them in Terraform state**. This enables fully declarative, secret-safe cloud-init generation entirely within Terraform.
 
-~> **Note:** Ephemeral resources are re-evaluated on every plan/apply. When using the `rendered` output with resources like `aws_instance.user_data`, set `user_data_replace_on_change = false` to prevent instance replacement on every run.
+~> **Note:** Ephemeral resources are re-evaluated on every plan/apply.
 
 ## Example Usage
 
@@ -67,28 +67,6 @@ runcmd:
  - [ sh, -xc, "echo $(date) ': hello world!'" ]
  - [ sh, -c, echo "=========hello world=========" ]
  - ls -l /root
-```
-
-### Usage with AWS Instance
-
-When using with `aws_instance`, set `user_data_replace_on_change = false` to prevent instance replacement:
-
-```terraform
-ephemeral "cloudinit_config" "example" {
-  part {
-    content_type = "text/cloud-config"
-    content      = ephemeral.vault_kv_secret_v2.example.data["cloud_config"]
-  }
-}
-
-resource "aws_instance" "example" {
-  ami           = "ami-12345678"
-  instance_type = "t2.micro"
-  user_data     = ephemeral.cloudinit_config.example.rendered
-  
-  # Prevent instance replacement when ephemeral values change
-  user_data_replace_on_change = false
-}
 ```
 
 ## Schema
