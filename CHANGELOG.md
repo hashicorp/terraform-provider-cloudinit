@@ -1,3 +1,9 @@
+## 2.4.0 (May 12, 2026)
+
+ENHANCEMENTS:
+
+* Added linux/s390x build target for IBM Z platform support ([#409](https://github.com/hashicorp/terraform-provider-cloudinit/issues/409))
+
 ## 2.3.7 (April 21, 2025)
 
 NOTES:
