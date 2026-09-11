@@ -1,3 +1,10 @@
+## 2.4.1 (September 11, 2026)
+
+NOTES:
+
+* Upgrade the Go toolchain to 1.26.8. ([#429](https://github.com/hashicorp/terraform-provider-cloudinit/issues/429))
+* Update golang.org/x/crypto to v0.56.0, golang.org/x/mod to v0.40.0, and google.golang.org/protobuf to v1.36.12. ([#430](https://github.com/hashicorp/terraform-provider-cloudinit/issues/430))
+
 ## 2.4.0 (May 12, 2026)
 
 ENHANCEMENTS:
