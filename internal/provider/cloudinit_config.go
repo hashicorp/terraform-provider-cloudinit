@@ -147,6 +147,15 @@ func (c *configModel) update(ctx context.Context) diag.Diagnostics {
 	return diags
 }
 
+func is7bit(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] > 0x7F {
+			return false
+		}
+	}
+	return true
+}
+
 func renderPartsToWriter(ctx context.Context, mimeBoundary string, parts []configPartModel, writer io.Writer) error {
 	mimeWriter := multipart.NewWriter(writer)
 	defer func() {
@@ -173,11 +182,19 @@ func renderPartsToWriter(ctx context.Context, mimeBoundary string, parts []confi
 	}
 
 	for _, part := range parts {
+		encode_to_base64 := !is7bit(part.Content.ValueString())
+		var cte string
+		if encode_to_base64 {
+			cte = "base64"
+		} else {
+			cte = "7bit"
+		}
+
 		header := textproto.MIMEHeader{}
 
 		header.Set("Content-Type", part.ContentType.ValueString())
 		header.Set("MIME-Version", "1.0")
-		header.Set("Content-Transfer-Encoding", "7bit")
+		header.Set("Content-Transfer-Encoding", cte)
 
 		if part.FileName.ValueString() != "" {
 			header.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, part.FileName.ValueString()))
@@ -187,12 +204,20 @@ func renderPartsToWriter(ctx context.Context, mimeBoundary string, parts []confi
 			header.Set("X-Merge-Type", part.MergeType.ValueString())
 		}
 
+		var err error
+
 		partWriter, err := mimeWriter.CreatePart(header)
 		if err != nil {
 			return err
 		}
 
-		_, err = partWriter.Write([]byte(part.Content.ValueString()))
+		if encode_to_base64 {
+			base64Writer := base64.NewEncoder(base64.StdEncoding, partWriter)
+			defer base64Writer.Close()
+			_, err = base64Writer.Write([]byte(part.Content.ValueString()))
+		} else {
+			_, err = partWriter.Write([]byte(part.Content.ValueString()))
+		}
 		if err != nil {
 			return err
 		}
